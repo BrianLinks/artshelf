@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+## [0.2.0] - Milestone 2
+
+### Added
+- Category taxonomy (eight categories) with per-category upload rules.
+- Artist profiles with a moderator approval state machine, resubmission after rejection, and admin-controlled tiers.
+- Upload pipeline: magic-byte format detection, per-category formats and size caps, full image decoding, WebP thumbnails, duplicate detection, per-user quotas and safe generated storage names.
+- Asset endpoints with owner, moderator and admin access, and deletion that removes files.
+- Domain errors mapped to HTTP statuses; 413 handling for oversized request bodies.
+
 ## [0.1.0] - Milestone 1
 
 ### Added

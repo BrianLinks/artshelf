@@ -14,10 +14,16 @@ Please do not open a public issue. Email the maintainer (see the GitHub profile 
 - Login responses do not reveal whether an email exists, and a dummy hash is compared for unknown emails to even out timing.
 - Role and account changes are audited. Admins cannot demote or disable themselves.
 - Privileged roles cannot be chosen at registration.
+- Uploads are identified by content (magic bytes), never by filename or client MIME type, and must be allowed for the chosen category. SVG, HTML and GIF are not accepted.
+- Images are fully decoded with a pixel cap before being stored, so files that only start with an image header are rejected.
+- Stored files get generated names; the storage layer rejects any name outside that pattern, so path traversal is not possible. Client filenames are sanitized for display only.
+- Per-upload size limits and per-user quotas are enforced; duplicate uploads are rejected.
+- Uploaded files are visible only to their owner, moderators and admins, and other users receive 404.
 - No secrets are committed. Configuration comes from the environment and is validated at startup.
 
 ## Known limitations
 
+- Zip, PDF, audio and video files are checked by signature only, not parsed. Treat them as untrusted downloads; they are served as attachments.
 - Registration returns 409 for an existing email, which reveals that the email is registered.
 - Rate limiting is in-process and per IP. Behind a reverse proxy, configure Express `trust proxy` before relying on it.
 - There is no password reset, email verification, or multi-factor authentication yet.

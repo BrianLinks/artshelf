@@ -2,7 +2,7 @@
 
 A creative-services marketplace: clients browse artists by category, hire them under explicit usage licenses, and pay through a local escrow-style ledger. Everything runs offline with no paid APIs.
 
-**Status: milestone 1 of 8.** Implemented so far: project tooling, versioned SQLite migrations, accounts, sessions, role-based authorization and an audit log. The marketplace features (artists, uploads, licenses, orders, ledger, commissions, reviews, support, search, UI) are planned and not built yet. See [CHANGELOG.md](CHANGELOG.md).
+**Status: milestone 2 of 8.** Implemented so far: tooling, migrations, accounts and roles, the category taxonomy, artist profiles with moderator approval and tiers, and a validated upload pipeline with thumbnails. Licenses, orders, ledger, commissions, reviews, support, search and the UI are planned and not built yet. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Requirements
 
@@ -35,7 +35,7 @@ npm run dev              # http://localhost:3000
 | `npm run migrate` | Apply pending database migrations |
 | `npm run create-admin` | Create an admin from `ADMIN_EMAIL`, `ADMIN_PASSWORD`, optional `ADMIN_NAME` |
 
-## API (milestone 1)
+## API
 
 | Method and path | Access | Purpose |
 |---|---|---|
@@ -48,6 +48,18 @@ npm run dev              # http://localhost:3000
 | `PATCH /api/admin/users/:id/role` | admin | Change a user's role |
 | `POST /api/admin/users/:id/disable` | admin | Disable a user and end their sessions |
 | `POST /api/admin/users/:id/enable` | admin | Re-enable a user |
+| `GET /api/categories` | public | Categories with allowed MIME types and size caps |
+| `PUT /api/artists/me`, `GET /api/artists/me` | artist | Create, edit or read your profile |
+| `GET /api/artists`, `GET /api/artists/:userId` | public | Approved artists; pending or rejected profiles are visible only to the owner and moderators |
+| `GET /api/moderation/artists?status=` | moderator, admin | Review queue (default `pending`) |
+| `POST /api/moderation/artists/:userId/approve`, `/reject` | moderator, admin | Approve or reject a profile (reject takes an optional `reason`) |
+| `PATCH /api/admin/artists/:userId/tier` | admin | Set `standard` or `premium` |
+| `POST /api/assets?category=&filename=` | artist with a profile | Upload a file as `application/octet-stream` |
+| `GET /api/assets` | signed in | Your uploads |
+| `GET /api/assets/:id`, `/file`, `/thumbnail` | owner, moderator, admin | Metadata, original file, WebP thumbnail |
+| `DELETE /api/assets/:id` | owner, admin | Delete the record and its files |
+
+Uploads are not public yet: public access arrives with listings in a later milestone.
 
 Errors are JSON: `{ "error": { "code": "...", "message": "...", "details": [...] } }`.
 
