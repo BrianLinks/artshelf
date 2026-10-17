@@ -1,0 +1,56 @@
+import { Router } from "express";
+import { z } from "zod";
+import { recordAudit } from "../../auth/audit.js";
+import { listByStatus, PROFILE_STATUSES, transitionStatus } from "../../artists/profiles.js";
+import type { Db } from "../../db/connection.js";
+import { parse } from "../errors.js";
+import { currentUser, requireRole } from "../middleware.js";
+
+const userIdParams = z.object({ userId: z.coerce.number().int().positive() });
+const listQuery = z.object({
+  status: z.enum(PROFILE_STATUSES).default("pending"),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+const rejectBody = z.object({ reason: z.string().trim().max(500).optional() });
+
+export function moderationRouter(db: Db): Router {
+  const router = Router();
+  router.use(requireRole("moderator", "admin"));
+
+  router.get("/artists", (req, res) => {
+    const query = parse(listQuery, req.query);
+    res.json({ artists: listByStatus(db, query.status, query.limit, query.offset) });
+  });
+
+  router.post("/artists/:userId/approve", (req, res) => {
+    const actor = currentUser(req);
+    const { userId } = parse(userIdParams, req.params);
+    const profile = db.transaction(() => {
+      const updated = transitionStatus(db, userId, "approved");
+      recordAudit(db, { actorUserId: actor.id, action: "artist.approved", targetType: "user", targetId: userId });
+      return updated;
+    })();
+    res.json({ profile });
+  });
+
+  router.post("/artists/:userId/reject", (req, res) => {
+    const actor = currentUser(req);
+    const { userId } = parse(userIdParams, req.params);
+    const { reason } = parse(rejectBody, req.body ?? {});
+    const profile = db.transaction(() => {
+      const updated = transitionStatus(db, userId, "rejected");
+      recordAudit(db, {
+        actorUserId: actor.id,
+        action: "artist.rejected",
+        targetType: "user",
+        targetId: userId,
+        detail: reason ? { reason } : undefined,
+      });
+      return updated;
+    })();
+    res.json({ profile });
+  });
+
+  return router;
+}

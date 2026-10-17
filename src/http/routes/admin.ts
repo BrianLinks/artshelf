@@ -3,6 +3,7 @@ import { z } from "zod";
 import { recordAudit } from "../../auth/audit.js";
 import { ROLES } from "../../auth/roles.js";
 import { deleteUserSessions } from "../../auth/sessions.js";
+import { setTier, TIERS } from "../../artists/profiles.js";
 import { findById, listUsers, setDisabled, setRole } from "../../auth/users.js";
 import type { Db } from "../../db/connection.js";
 import { HttpError, parse } from "../errors.js";
@@ -10,6 +11,8 @@ import { currentUser, requireRole } from "../middleware.js";
 
 const idParams = z.object({ id: z.coerce.number().int().positive() });
 const roleBody = z.object({ role: z.enum(ROLES) });
+const userIdParams = z.object({ userId: z.coerce.number().int().positive() });
+const tierBody = z.object({ tier: z.enum(TIERS) });
 
 export function adminRouter(db: Db): Router {
   const router = Router();
@@ -72,6 +75,24 @@ export function adminRouter(db: Db): Router {
       return user;
     })();
     res.json({ user: updated });
+  });
+
+  router.patch("/artists/:userId/tier", (req, res) => {
+    const actor = currentUser(req);
+    const { userId } = parse(userIdParams, req.params);
+    const { tier } = parse(tierBody, req.body);
+    const profile = db.transaction(() => {
+      const updated = setTier(db, userId, tier);
+      recordAudit(db, {
+        actorUserId: actor.id,
+        action: "artist.tier_changed",
+        targetType: "user",
+        targetId: userId,
+        detail: { tier },
+      });
+      return updated;
+    })();
+    res.json({ profile });
   });
 
   return router;
