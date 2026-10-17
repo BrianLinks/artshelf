@@ -1,5 +1,6 @@
 import type { ErrorRequestHandler, RequestHandler } from "express";
 import type { ZodTypeAny, z } from "zod";
+import { DomainError } from "../errors.js";
 
 export class HttpError extends Error {
   constructor(
@@ -26,6 +27,20 @@ export function parse<T extends ZodTypeAny>(schema: T, data: unknown): z.infer<T
   return result.data;
 }
 
+const DOMAIN_STATUS: Record<string, number> = {
+  not_found: 404,
+  unknown_category: 400,
+  empty_file: 400,
+  too_large: 413,
+  quota_exceeded: 413,
+  unsupported_type: 415,
+  type_not_allowed: 415,
+  invalid_image: 422,
+  duplicate_asset: 409,
+  invalid_transition: 409,
+  profile_required: 409,
+};
+
 export const notFound: RequestHandler = (_req, _res, next) => {
   next(new HttpError(404, "not_found", "Not found"));
 };
@@ -33,6 +48,14 @@ export const notFound: RequestHandler = (_req, _res, next) => {
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err instanceof HttpError) {
     res.status(err.status).json({ error: { code: err.code, message: err.message, details: err.details } });
+    return;
+  }
+  if (err instanceof DomainError) {
+    res.status(DOMAIN_STATUS[err.code] ?? 400).json({ error: { code: err.code, message: err.message } });
+    return;
+  }
+  if (typeof err === "object" && err !== null && "status" in err && err.status === 413) {
+    res.status(413).json({ error: { code: "payload_too_large", message: "Request body too large" } });
     return;
   }
   if (typeof err === "object" && err !== null && "status" in err && typeof err.status === "number") {

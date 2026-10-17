@@ -10,7 +10,7 @@ function tableNames(db: ReturnType<typeof openDatabase>): string[] {
 describe("migrate", () => {
   it("creates the schema and records applied migrations", () => {
     const db = openDatabase(":memory:");
-    expect(migrate(db)).toEqual([1]);
+    expect(migrate(db)).toEqual([1, 2]);
     expect(tableNames(db)).toEqual(expect.arrayContaining(["users", "sessions", "audit_log", "schema_migrations"]));
   });
 
