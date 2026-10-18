@@ -3,6 +3,7 @@ import { loadConfig } from "./config.js";
 import { openDatabase } from "./db/connection.js";
 import { migrate } from "./db/migrate.js";
 import { createApp } from "./http/app.js";
+import { releaseDueEscrows } from "./orders/service.js";
 
 const config = loadConfig();
 const db = openDatabase(config.DATABASE_PATH);
@@ -14,7 +15,13 @@ const server = app.listen(config.PORT, () => {
   console.log(`ArtShelf listening on http://localhost:${config.PORT}`);
 });
 
-const cleanup = setInterval(() => deleteExpiredSessions(db), 60 * 60 * 1000);
+const hourly = (): void => {
+  deleteExpiredSessions(db);
+  const released = releaseDueEscrows(db);
+  if (released > 0) console.log(`Auto-released ${released} escrowed order(s)`);
+};
+hourly();
+const cleanup = setInterval(hourly, 60 * 60 * 1000);
 cleanup.unref();
 
 function shutdown(): void {
