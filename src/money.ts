@@ -48,3 +48,15 @@ export function splitCommission(total: Cents, commissionBps: number): { commissi
   const commission = percentOf(total, commissionBps);
   return { commission, payout: cents(total - commission) };
 }
+
+export const MAX_MULTIPLIER_BPS = 1_000_000;
+
+/** Returns amount * bps / 10000 rounded half up, for multipliers above 100% (for example 25000 bps = 2.5x). */
+export function multiplyBps(amount: Cents, bps: number): Cents {
+  if (amount < 0) throw new RangeError("multiplyBps requires a non-negative amount");
+  if (!Number.isInteger(bps) || bps < 0 || bps > MAX_MULTIPLIER_BPS) {
+    throw new RangeError(`bps must be an integer from 0 to ${MAX_MULTIPLIER_BPS}, got ${bps}`);
+  }
+  const half = BigInt(BPS_DENOMINATOR / 2);
+  return cents(Number((BigInt(amount) * BigInt(bps) + half) / BigInt(BPS_DENOMINATOR)));
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cents, formatCents, parseDollars, percentOf, splitCommission } from "../src/money.js";
+import { cents, formatCents, multiplyBps, parseDollars, percentOf, splitCommission } from "../src/money.js";
 
 describe("cents", () => {
   it("accepts integers", () => {
@@ -79,5 +79,25 @@ describe("splitCommission", () => {
         expect(payout).toBeGreaterThanOrEqual(0);
       }
     }
+  });
+});
+
+describe("multiplyBps", () => {
+  it("scales by multipliers above 100%", () => {
+    expect(multiplyBps(cents(50_000), 25_000)).toBe(125_000);
+    expect(multiplyBps(cents(50_000), 10_000)).toBe(50_000);
+    expect(multiplyBps(cents(0), 50_000)).toBe(0);
+  });
+
+  it("rounds half up", () => {
+    expect(multiplyBps(cents(101), 25_000)).toBe(253); // 252.5
+    expect(multiplyBps(cents(100), 12_345)).toBe(123); // 123.45
+  });
+
+  it("rejects negative amounts and out-of-range or fractional multipliers", () => {
+    expect(() => multiplyBps(cents(-1), 10_000)).toThrow(RangeError);
+    expect(() => multiplyBps(cents(100), -1)).toThrow(RangeError);
+    expect(() => multiplyBps(cents(100), 1_000_001)).toThrow(RangeError);
+    expect(() => multiplyBps(cents(100), 1.5)).toThrow(RangeError);
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { openDatabase } from "../src/db/connection.js";
 import { migrate, type Migration } from "../src/db/migrate.js";
+import { MIGRATIONS } from "../src/db/migrations/index.js";
 
 function tableNames(db: ReturnType<typeof openDatabase>): string[] {
   const rows = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[];
@@ -10,8 +11,8 @@ function tableNames(db: ReturnType<typeof openDatabase>): string[] {
 describe("migrate", () => {
   it("creates the schema and records applied migrations", () => {
     const db = openDatabase(":memory:");
-    expect(migrate(db)).toEqual([1, 2]);
-    expect(tableNames(db)).toEqual(expect.arrayContaining(["users", "sessions", "audit_log", "schema_migrations"]));
+    expect(migrate(db)).toEqual(MIGRATIONS.map((migration) => migration.id));
+    expect(tableNames(db)).toEqual(expect.arrayContaining(["users", "sessions", "audit_log", "schema_migrations", "categories", "artist_profiles", "assets", "listings", "listing_licenses", "listing_tags"]));
   });
 
   it("is idempotent", () => {
