@@ -3,6 +3,7 @@ import { z } from "zod";
 import { recordAudit } from "../../auth/audit.js";
 import { listByStatus, PROFILE_STATUSES, transitionStatus } from "../../artists/profiles.js";
 import type { Db } from "../../db/connection.js";
+import { removeListing } from "../../listings/service.js";
 import { parse } from "../errors.js";
 import { currentUser, requireRole } from "../middleware.js";
 
@@ -12,6 +13,7 @@ const listQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),
 });
+const listingIdParams = z.object({ id: z.coerce.number().int().positive() });
 const rejectBody = z.object({ reason: z.string().trim().max(500).optional() });
 
 export function moderationRouter(db: Db): Router {
@@ -50,6 +52,24 @@ export function moderationRouter(db: Db): Router {
       return updated;
     })();
     res.json({ profile });
+  });
+
+  router.post("/listings/:id/remove", (req, res) => {
+    const actor = currentUser(req);
+    const { id } = parse(listingIdParams, req.params);
+    const { reason } = parse(rejectBody, req.body ?? {});
+    const listing = db.transaction(() => {
+      const removed = removeListing(db, id);
+      recordAudit(db, {
+        actorUserId: actor.id,
+        action: "listing.removed",
+        targetType: "listing",
+        targetId: id,
+        detail: reason ? { reason } : undefined,
+      });
+      return removed;
+    })();
+    res.json({ listing });
   });
 
   return router;

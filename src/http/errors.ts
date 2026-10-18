@@ -39,6 +39,11 @@ const DOMAIN_STATUS: Record<string, number> = {
   duplicate_asset: 409,
   invalid_transition: 409,
   profile_required: 409,
+  profile_not_approved: 409,
+  invalid_asset: 400,
+  asset_already_listed: 409,
+  asset_in_use: 409,
+  invalid_listing_state: 409,
 };
 
 export const notFound: RequestHandler = (_req, _res, next) => {

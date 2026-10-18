@@ -4,6 +4,7 @@ import { findAsset, deleteAsset, listAssetsByOwner, toPublicAsset, type AssetRec
 import { uploadAsset } from "../../assets/service.js";
 import type { LocalStorage } from "../../assets/storage.js";
 import { getProfile } from "../../artists/profiles.js";
+import { findListingByAsset } from "../../listings/repo.js";
 import type { Config } from "../../config.js";
 import type { Db } from "../../db/connection.js";
 import { DomainError } from "../../errors.js";
@@ -78,6 +79,9 @@ export function assetsRouter(db: Db, config: Config, storage: LocalStorage): Rou
     const asset = loadViewable(req);
     if (asset.ownerUserId !== user.id && user.role !== "admin") {
       throw new HttpError(403, "forbidden", "Insufficient permissions");
+    }
+    if (findListingByAsset(db, asset.id)) {
+      throw new DomainError("asset_in_use", "This asset is used by a listing");
     }
     deleteAsset(db, asset.id);
     await storage.remove(asset.storedName);
