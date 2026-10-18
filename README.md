@@ -2,7 +2,7 @@
 
 A creative-services marketplace: clients browse artists by category, hire them under explicit usage licenses, and pay through a local escrow-style ledger. Everything runs offline with no paid APIs.
 
-**Status: milestone 3 of 8.** Implemented so far: tooling, migrations, accounts and roles, the category taxonomy, artist profiles with moderator approval and tiers, a validated upload pipeline, and the license engine with listings and public browsing. Orders, ledger, commissions, reviews, support, search and the UI are planned and not built yet. See [CHANGELOG.md](CHANGELOG.md).
+**Status: milestone 4 of 8.** Implemented so far: tooling, migrations, accounts and roles, the category taxonomy, artist profiles, validated uploads, the license engine with listings, and simulated payments: orders, escrow, a double-entry ledger, commission and royalty statements. The request board, reviews, support desk, search and the UI are planned and not built yet. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Requirements
 
@@ -67,6 +67,21 @@ npm run dev              # http://localhost:3000
 | `POST /api/listings`, `PUT /api/listings/:id` | artist | Create or edit a listing (price in integer cents) |
 | `POST /api/listings/:id/publish`, `/unpublish` | artist | Publishing needs an approved profile |
 | `POST /api/moderation/listings/:id/remove` | moderator, admin | Permanent takedown with optional `reason` |
+
+| `GET /api/wallet` | client, artist | Simulated balance and recent ledger entries |
+| `POST /api/wallet/deposit` | client, artist | Simulated top-up, 1.00 to 10,000.00 per call |
+| `POST /api/orders` | client, artist | Buy a license: `{ listingId, license }`. Funds move into escrow |
+| `GET /api/orders`, `GET /api/orders/sales` | signed in / artist | Your purchases / your sales |
+| `GET /api/orders/:id` | buyer, artist, moderator, admin | Order detail |
+| `POST /api/orders/:id/confirm` | buyer | Release escrow to the artist |
+| `POST /api/orders/:id/dispute` | buyer | Freeze the order with a `reason` |
+| `POST /api/orders/:id/refund` | artist | Refund an order still in escrow |
+| `GET /api/orders/:id/download`, `/license` | buyer (license also artist) | Original file, and the license grant |
+| `POST /api/moderation/orders/:id/resolve` | moderator, admin | Settle a dispute: `{ outcome: "release" or "refund" }` |
+| `GET /api/royalties?from=&to=` | artist (admin adds `artistId`) | Royalty statement for completed orders |
+| `GET /api/admin/ledger/verify` | admin | Reconciles the ledger against orders |
+
+Money is simulated: deposits come from an internal external account and no payment provider is involved. A paid order sits in escrow for `ESCROW_HOLD_DAYS` (default 7), then is released automatically unless the buyer opened a dispute. Commission is 15% for standard artists and 10% for premium artists, snapshotted on each order.
 
 Original uploaded files stay private to their owner, moderators and admins. The public sees only listing metadata and the WebP preview.
 

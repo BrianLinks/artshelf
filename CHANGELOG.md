@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+## [0.4.0] - Milestone 4
+
+### Added
+- Double-entry ledger with append-only tables, simulated wallet top-ups and a reconciliation report.
+- Orders with escrow: purchase, buyer confirmation, automatic release after the hold period, artist refund, buyer dispute and moderator resolution.
+- Tier-based platform commission, snapshotted on every order, with exact split arithmetic.
+- Buyer downloads of the original file and a license grant document per order.
+- Royalty statements with date ranges and pending-escrow totals.
+
 ## [0.3.0] - Milestone 3
 
 ### Added

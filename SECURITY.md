@@ -21,10 +21,15 @@ Please do not open a public issue. Email the maintainer (see the GitHub profile 
 - Uploaded files are visible only to their owner, moderators and admins, and other users receive 404.
 - Listing prices are validated integer cents within fixed bounds, and license prices are computed server-side, never accepted from the client.
 - Draft and removed listings are hidden behind 404 for everyone except the owner, moderators and admins.
+- Ledger tables are append-only (database triggers) and every entry must balance to zero; an admin endpoint reconciles the ledger against orders and reports any drift.
+- Orders, purchased files and license grants are visible only to the people involved (plus moderators and admins for order detail); everyone else gets 404.
+- Purchases, escrow moves and refunds run inside single database transactions together with their ledger entries and audit records, so a failure leaves nothing half-done.
 - No secrets are committed. Configuration comes from the environment and is validated at startup.
 
 ## Known limitations
 
+- Payments are simulated: any signed-in client or artist can top up their own wallet. Real payments would need a provider, webhooks and idempotency keys.
+- Statements are not paginated yet.
 - Zip, PDF, audio and video files are checked by signature only, not parsed. Treat them as untrusted downloads; they are served as attachments.
 - Registration returns 409 for an existing email, which reveals that the email is registered.
 - Rate limiting is in-process and per IP. Behind a reverse proxy, configure Express `trust proxy` before relying on it.

@@ -11,6 +11,9 @@ src/
   auth/              users, passwords, sessions, roles, audit log (no HTTP knowledge)
   catalog/           category lookups and per-category upload rules
   artists/           artist profiles, approval state machine, tiers
+  ledger/            double-entry ledger, wallet operations, reconciliation
+  orders/            order repository, escrow service, commission pricing
+  royalties/         artist royalty statements
   licenses/          license types, price multipliers and allowed-use matrix (pure functions)
   listings/          listing repository (queries, views) and service (create, edit, publish, remove)
   assets/            magic-byte detection, image processing, local storage, upload service, asset repository
@@ -30,7 +33,7 @@ Authorization is declared where routes are mounted. The admin router applies `re
 
 ## Data
 
-SQLite with `foreign_keys = ON` and WAL. Schema changes are TypeScript migration modules applied in order and checksummed (ADR 0003). Tables so far: `users`, `sessions`, `audit_log`, `schema_migrations`, `categories` (seeded), `artist_profiles`, `assets`, `listings`, `listing_licenses`, `listing_tags`. Timestamps are ISO-8601 UTC strings. Money will be integer cents (ADR 0001).
+SQLite with `foreign_keys = ON` and WAL. Schema changes are TypeScript migration modules applied in order and checksummed (ADR 0003). Tables so far: `users`, `sessions`, `audit_log`, `schema_migrations`, `categories` (seeded), `artist_profiles`, `assets`, `listings`, `listing_licenses`, `listing_tags`, `orders`, `accounts`, `journal_entries`, `ledger_lines`. Timestamps are ISO-8601 UTC strings. Money will be integer cents (ADR 0001).
 
 ## Validation and errors
 
@@ -43,6 +46,10 @@ A profile starts `pending`. Moderators or admins move it `pending -> approved | 
 ## Listings and licenses
 
 A listing wraps one owned asset (the category comes from the asset) with a title, base price, enabled license types and tags. Status moves `draft <-> published`, and `draft | published -> removed`; removed is terminal and only moderators can cause it. A listing is publicly visible only while it is published and its artist is approved and active, so approving, rejecting or disabling an artist immediately changes what the public sees. Publishing requires an approved artist profile. Drafts and removed listings are visible only to the owner, moderators and admins; everyone else gets 404. An asset cannot be deleted while a listing references it. See ADR 0005.
+
+## Orders and the ledger
+
+Every movement of money is a journal entry whose lines sum to zero; an account's balance is the sum of its lines, and the ledger tables reject UPDATE and DELETE. Accounts are: one `external` source, one `platform_revenue`, a wallet per user and an escrow per order. Buying moves price from the buyer's wallet into the order's escrow (refused if the wallet is short). Releasing moves it from escrow to the artist's wallet (payout) and platform revenue (commission). Refunding moves it back to the buyer. Orders move `escrow -> completed | refunded | disputed` and `disputed -> completed | refunded`; completed and refunded are terminal. Every order snapshots price, commission rate, commission and payout at purchase, so later listing or tier changes never rewrite history. `verifyLedger` re-checks all of this from the stored rows. See ADR 0006.
 
 ## Upload pipeline
 
