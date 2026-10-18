@@ -95,3 +95,30 @@ export function fakeZip(size: number, seed: number): Buffer {
   Buffer.from([0x50, 0x4b, 0x03, 0x04]).copy(buffer);
   return buffer;
 }
+
+type Agent = ReturnType<typeof request.agent>;
+
+/** Uploads a PNG, creates a listing for it and publishes it. Returns the listing id and the PNG bytes. */
+export async function createPublishedListing(
+  artist: Agent,
+  options: { category?: string; color?: number; basePriceCents?: number; licenses?: string[] } = {},
+): Promise<{ id: number; png: Buffer }> {
+  const png = await makePng(options.color ?? 90, 60, 30);
+  const uploaded = await upload(artist, { category: options.category ?? "illustration", filename: "art.png", data: png });
+  if (uploaded.status !== 201) throw new Error(`Upload failed in test helper: ${uploaded.status}`);
+  const created = await artist.post("/api/listings").send({
+    assetId: uploaded.body.asset.id,
+    title: "Test Artwork",
+    basePriceCents: options.basePriceCents ?? 50_000,
+    licenses: options.licenses ?? ["non_commercial", "commercial", "broadcast"],
+  });
+  if (created.status !== 201) throw new Error(`Listing failed in test helper: ${created.status}`);
+  const published = await artist.post(`/api/listings/${created.body.listing.id}/publish`);
+  if (published.status !== 200) throw new Error(`Publish failed in test helper: ${published.status}`);
+  return { id: created.body.listing.id, png };
+}
+
+export async function fund(agent: Agent, amountCents: number): Promise<void> {
+  const response = await agent.post("/api/wallet/deposit").send({ amountCents });
+  if (response.status !== 201) throw new Error(`Deposit failed in test helper: ${response.status}`);
+}

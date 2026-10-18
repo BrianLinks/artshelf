@@ -15,6 +15,7 @@ const schema = z.object({
   UPLOAD_DIR: z.string().min(1).default("./data/uploads"),
   MAX_UPLOAD_MB: z.coerce.number().int().min(1).max(500).default(20),
   USER_QUOTA_MB: z.coerce.number().int().min(1).default(200),
+  ESCROW_HOLD_DAYS: z.coerce.number().int().min(0).max(90).default(7),
 });
 
 export type Config = z.infer<typeof schema>;
