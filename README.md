@@ -2,7 +2,7 @@
 
 A creative-services marketplace: clients browse artists by category, hire them under explicit usage licenses, and pay through a local escrow-style ledger. Everything runs offline with no paid APIs.
 
-**Status: milestone 2 of 8.** Implemented so far: tooling, migrations, accounts and roles, the category taxonomy, artist profiles with moderator approval and tiers, and a validated upload pipeline with thumbnails. Licenses, orders, ledger, commissions, reviews, support, search and the UI are planned and not built yet. See [CHANGELOG.md](CHANGELOG.md).
+**Status: milestone 3 of 8.** Implemented so far: tooling, migrations, accounts and roles, the category taxonomy, artist profiles with moderator approval and tiers, a validated upload pipeline, and the license engine with listings and public browsing. Orders, ledger, commissions, reviews, support, search and the UI are planned and not built yet. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Requirements
 
@@ -59,7 +59,18 @@ npm run dev              # http://localhost:3000
 | `GET /api/assets/:id`, `/file`, `/thumbnail` | owner, moderator, admin | Metadata, original file, WebP thumbnail |
 | `DELETE /api/assets/:id` | owner, admin | Delete the record and its files |
 
-Uploads are not public yet: public access arrives with listings in a later milestone.
+| `GET /api/licenses` | public | License definitions: price multipliers and allowed uses |
+| `GET /api/listings` | public | Published listings. Filters: `category`, `license`, `minPriceCents`, `maxPriceCents`, `tag`, `artist`; `sort` = `newest`, `price_asc`, `price_desc`; `limit`, `offset` |
+| `GET /api/listings/:id`, `/preview` | public (owner, moderators and admins also see drafts) | Listing detail and WebP preview |
+| `GET /api/listings/:id/license-check?license=&use=` | public | Whether a use is allowed under an offered license |
+| `GET /api/listings/mine` | artist | Your listings in every status |
+| `POST /api/listings`, `PUT /api/listings/:id` | artist | Create or edit a listing (price in integer cents) |
+| `POST /api/listings/:id/publish`, `/unpublish` | artist | Publishing needs an approved profile |
+| `POST /api/moderation/listings/:id/remove` | moderator, admin | Permanent takedown with optional `reason` |
+
+Original uploaded files stay private to their owner, moderators and admins. The public sees only listing metadata and the WebP preview.
+
+Prices are integer cents everywhere. A listing has one base price; each license price is the base times a platform multiplier (Non-Commercial 1x, Commercial 2.5x, Broadcast 5x), rounded half up.
 
 Errors are JSON: `{ "error": { "code": "...", "message": "...", "details": [...] } }`.
 

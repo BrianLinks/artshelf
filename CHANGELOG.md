@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+## [0.3.0] - Milestone 3
+
+### Added
+- License engine: Non-Commercial, Commercial and Broadcast definitions with price multipliers and an allowed-use matrix that never permits reselling the artwork as-is.
+- Listings with tags, per-license computed prices, publish and unpublish, owner editing and moderator takedown.
+- Public browsing with category, license, price range, tag and artist filters, sorting and pagination, plus a public WebP preview.
+- License-check endpoint and a public license definitions endpoint.
+- `multiplyBps` for exact multiplier pricing above 100%.
+
+### Changed
+- Assets referenced by a listing can no longer be deleted.
+- Migration tests no longer hard-code migration ids.
+
 ## [0.2.0] - Milestone 2
 
 ### Added

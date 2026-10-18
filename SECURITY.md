@@ -19,6 +19,8 @@ Please do not open a public issue. Email the maintainer (see the GitHub profile 
 - Stored files get generated names; the storage layer rejects any name outside that pattern, so path traversal is not possible. Client filenames are sanitized for display only.
 - Per-upload size limits and per-user quotas are enforced; duplicate uploads are rejected.
 - Uploaded files are visible only to their owner, moderators and admins, and other users receive 404.
+- Listing prices are validated integer cents within fixed bounds, and license prices are computed server-side, never accepted from the client.
+- Draft and removed listings are hidden behind 404 for everyone except the owner, moderators and admins.
 - No secrets are committed. Configuration comes from the environment and is validated at startup.
 
 ## Known limitations
