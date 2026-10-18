@@ -44,6 +44,12 @@ const DOMAIN_STATUS: Record<string, number> = {
   asset_already_listed: 409,
   asset_in_use: 409,
   invalid_listing_state: 409,
+  listing_unavailable: 409,
+  cannot_buy_own_listing: 409,
+  license_not_offered: 400,
+  already_purchased: 409,
+  insufficient_funds: 402,
+  invalid_order_state: 409,
 };
 
 export const notFound: RequestHandler = (_req, _res, next) => {

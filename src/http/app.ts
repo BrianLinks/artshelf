@@ -12,6 +12,9 @@ import { catalogRouter } from "./routes/catalog.js";
 import { licensesRouter } from "./routes/licenses.js";
 import { listingsRouter } from "./routes/listings.js";
 import { moderationRouter } from "./routes/moderation.js";
+import { ordersRouter } from "./routes/orders.js";
+import { royaltiesRouter } from "./routes/royalties.js";
+import { walletRouter } from "./routes/wallet.js";
 
 export function createApp(db: Db, config: Config): Express {
   const app = express();
@@ -31,6 +34,9 @@ export function createApp(db: Db, config: Config): Express {
   app.use("/api/artists", artistsRouter(db));
   app.use("/api/listings", listingsRouter(db, storage));
   app.use("/api/assets", assetsRouter(db, config, storage));
+  app.use("/api/wallet", walletRouter(db));
+  app.use("/api/orders", ordersRouter(db, config, storage));
+  app.use("/api/royalties", royaltiesRouter(db));
   app.use("/api/moderation", moderationRouter(db));
   app.use("/api/admin", adminRouter(db));
 

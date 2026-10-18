@@ -4,6 +4,7 @@ import { recordAudit } from "../../auth/audit.js";
 import { listByStatus, PROFILE_STATUSES, transitionStatus } from "../../artists/profiles.js";
 import type { Db } from "../../db/connection.js";
 import { removeListing } from "../../listings/service.js";
+import { resolveDispute } from "../../orders/service.js";
 import { parse } from "../errors.js";
 import { currentUser, requireRole } from "../middleware.js";
 
@@ -14,6 +15,8 @@ const listQuery = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 });
 const listingIdParams = z.object({ id: z.coerce.number().int().positive() });
+const orderIdParams = z.object({ id: z.coerce.number().int().positive() });
+const resolveBody = z.object({ outcome: z.enum(["release", "refund"]), note: z.string().trim().max(500).optional() });
 const rejectBody = z.object({ reason: z.string().trim().max(500).optional() });
 
 export function moderationRouter(db: Db): Router {
@@ -70,6 +73,13 @@ export function moderationRouter(db: Db): Router {
       return removed;
     })();
     res.json({ listing });
+  });
+
+  router.post("/orders/:id/resolve", (req, res) => {
+    const actor = currentUser(req);
+    const { id } = parse(orderIdParams, req.params);
+    const { outcome, note } = parse(resolveBody, req.body);
+    res.json({ order: resolveDispute(db, actor.id, id, outcome, note) });
   });
 
   return router;

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { recordAudit } from "../../auth/audit.js";
 import { ROLES } from "../../auth/roles.js";
+import { verifyLedger } from "../../ledger/ledger.js";
 import { deleteUserSessions } from "../../auth/sessions.js";
 import { setTier, TIERS } from "../../artists/profiles.js";
 import { findById, listUsers, setDisabled, setRole } from "../../auth/users.js";
@@ -93,6 +94,10 @@ export function adminRouter(db: Db): Router {
       return updated;
     })();
     res.json({ profile });
+  });
+
+  router.get("/ledger/verify", (_req, res) => {
+    res.json(verifyLedger(db));
   });
 
   return router;
