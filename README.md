@@ -2,7 +2,7 @@
 
 A creative-services marketplace: clients browse artists by category, hire them under explicit usage licenses, and pay through a local escrow-style ledger. Everything runs offline with no paid APIs.
 
-**Status: milestone 4 of 8.** Implemented so far: tooling, migrations, accounts and roles, the category taxonomy, artist profiles, validated uploads, the license engine with listings, and simulated payments: orders, escrow, a double-entry ledger, commission and royalty statements. The request board, reviews, support desk, search and the UI are planned and not built yet. See [CHANGELOG.md](CHANGELOG.md).
+**Status: milestone 5 of 8.** Implemented so far: tooling, migrations, accounts and roles, the category taxonomy, artist profiles, validated uploads, the license engine with listings, simulated payments with escrow and a double-entry ledger, and the Request Board for custom commissions. Reviews, the support desk, search and the UI are planned and not built yet. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Requirements
 
@@ -81,7 +81,20 @@ npm run dev              # http://localhost:3000
 | `GET /api/royalties?from=&to=` | artist (admin adds `artistId`) | Royalty statement for completed orders |
 | `GET /api/admin/ledger/verify` | admin | Reconciles the ledger against orders |
 
-Money is simulated: deposits come from an internal external account and no payment provider is involved. A paid order sits in escrow for `ESCROW_HOLD_DAYS` (default 7), then is released automatically unless the buyer opened a dispute. Commission is 15% for standard artists and 10% for premium artists, snapshotted on each order.
+| `GET /api/requests` | public | The board: open and proposed requests. Filters: `category`, `status`, `minBudgetCents`, `maxBudgetCents`; `sort` = `newest`, `budget_asc`, `budget_desc` |
+| `POST /api/requests` | client, artist | Post a request (`title`, `description`, `category`, `budgetCents`) |
+| `GET /api/requests/:id` | public while open or proposed; then parties and staff | Request detail |
+| `GET /api/requests/mine`, `/assigned` | signed in / artist | Requests you posted / jobs you were hired for |
+| `POST /api/requests/:id/proposals`, `PUT`, `DELETE` | approved artist | Bid, edit or withdraw (price, message, `deliveryDays`, `maxRevisions`) |
+| `GET /api/requests/:id/proposals` | client (all), artist (own), staff | Proposals |
+| `POST /api/requests/:id/accept` | client | Pick a proposal; the price moves into escrow |
+| `POST /api/requests/:id/start`, `/deliver`, `/withdraw` | assigned artist | Start work, deliver an upload, or withdraw for a full refund |
+| `POST /api/requests/:id/revise`, `/approve`, `/cancel` | client | Ask for changes, approve (pays the artist), or cancel before accepting |
+| `POST /api/requests/:id/dispute` | client or artist | Freeze a funded request |
+| `GET /api/requests/:id/delivery`, `/events` | parties (staff while disputed / always for events) | Latest delivered file and the change history |
+| `POST /api/moderation/requests/:id/resolve` | moderator, admin | Settle a dispute: `release` or `refund` |
+
+Commissions follow the same simulated money rules as sales. Money is simulated: deposits come from an internal external account and no payment provider is involved. A paid order sits in escrow for `ESCROW_HOLD_DAYS` (default 7), then is released automatically unless the buyer opened a dispute. Commission is 15% for standard artists and 10% for premium artists, snapshotted on each order.
 
 Original uploaded files stay private to their owner, moderators and admins. The public sees only listing metadata and the WebP preview.
 

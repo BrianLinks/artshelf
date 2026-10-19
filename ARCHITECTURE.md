@@ -11,6 +11,7 @@ src/
   auth/              users, passwords, sessions, roles, audit log (no HTTP knowledge)
   catalog/           category lookups and per-category upload rules
   artists/           artist profiles, approval state machine, tiers
+  requests/          request board: state machine, repository, service
   ledger/            double-entry ledger, wallet operations, reconciliation
   orders/            order repository, escrow service, commission pricing
   royalties/         artist royalty statements
@@ -33,7 +34,7 @@ Authorization is declared where routes are mounted. The admin router applies `re
 
 ## Data
 
-SQLite with `foreign_keys = ON` and WAL. Schema changes are TypeScript migration modules applied in order and checksummed (ADR 0003). Tables so far: `users`, `sessions`, `audit_log`, `schema_migrations`, `categories` (seeded), `artist_profiles`, `assets`, `listings`, `listing_licenses`, `listing_tags`, `orders`, `accounts`, `journal_entries`, `ledger_lines`. Timestamps are ISO-8601 UTC strings. Money will be integer cents (ADR 0001).
+SQLite with `foreign_keys = ON` and WAL. Schema changes are TypeScript migration modules applied in order and checksummed (ADR 0003). Tables so far: `users`, `sessions`, `audit_log`, `schema_migrations`, `categories` (seeded), `artist_profiles`, `assets`, `listings`, `listing_licenses`, `listing_tags`, `orders`, `accounts`, `journal_entries`, `ledger_lines`, `requests`, `proposals`, `request_deliveries`, `request_events`. Timestamps are ISO-8601 UTC strings. Money will be integer cents (ADR 0001).
 
 ## Validation and errors
 
@@ -50,6 +51,10 @@ A listing wraps one owned asset (the category comes from the asset) with a title
 ## Orders and the ledger
 
 Every movement of money is a journal entry whose lines sum to zero; an account's balance is the sum of its lines, and the ledger tables reject UPDATE and DELETE. Accounts are: one `external` source, one `platform_revenue`, a wallet per user and an escrow per order. Buying moves price from the buyer's wallet into the order's escrow (refused if the wallet is short). Releasing moves it from escrow to the artist's wallet (payout) and platform revenue (commission). Refunding moves it back to the buyer. Orders move `escrow -> completed | refunded | disputed` and `disputed -> completed | refunded`; completed and refunded are terminal. Every order snapshots price, commission rate, commission and payout at purchase, so later listing or tier changes never rewrite history. `verifyLedger` re-checks all of this from the stored rows. See ADR 0006.
+
+## Request board
+
+A client posts a request; approved artists bid; the client accepts one bid, which funds an escrow account for that request. Status follows a transition table in `requests/machine.ts`: `open <-> proposed -> accepted -> in_progress -> delivered <-> revised`, then `completed`; `disputed` can be entered from any funded state; `cancelled` (before acceptance) and `refunded` and `completed` are terminal. The table says which moves exist; the service adds who may make them (for example only the client approves, only staff resolve a dispute). Every move goes through one function that updates the status and appends to `request_events`, an append-only history. The accepted proposal's price, commission and revision allowance are snapshotted on the request. Delivered files are versioned, stay private to the parties (staff only during a dispute) and cannot be deleted. Unanswered deliveries are approved automatically after `REQUEST_AUTO_APPROVE_DAYS`. See ADR 0007.
 
 ## Upload pipeline
 

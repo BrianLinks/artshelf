@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+## [0.5.0] - Milestone 5
+
+### Added
+- Request Board: clients post paid commission requests, approved artists bid, the client accepts one proposal.
+- Commission state machine (open, proposed, accepted, in progress, delivered, revised, completed, disputed, plus cancelled and refunded) with an append-only event history.
+- Escrow for commissions on the existing ledger: funding on acceptance, release on approval, refund on withdrawal or dispute resolution.
+- Versioned deliveries, revision limits from the accepted proposal, automatic approval after a review period, disputes resolved by moderators and admins.
+- Commissions on royalty statements next to listing sales; ledger reconciliation covers request escrow.
+
+### Changed
+- The migration runner can rebuild tables safely (foreign keys off, foreign_key_check before commit); migration 5 uses it to let escrow accounts belong to requests.
+- Delivered assets can no longer be deleted.
+
 ## [0.4.0] - Milestone 4
 
 ### Added

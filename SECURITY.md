@@ -24,6 +24,8 @@ Please do not open a public issue. Email the maintainer (see the GitHub profile 
 - Ledger tables are append-only (database triggers) and every entry must balance to zero; an admin endpoint reconciles the ledger against orders and reports any drift.
 - Orders, purchased files and license grants are visible only to the people involved (plus moderators and admins for order detail); everyone else gets 404.
 - Purchases, escrow moves and refunds run inside single database transactions together with their ledger entries and audit records, so a failure leaves nothing half-done.
+- Commission state changes go through a single transition function backed by a tested state machine, with actor checks on top, so a client cannot approve disputed work and an artist cannot withdraw frozen funds.
+- Request history is append-only (database triggers). Delivered files are visible to the two parties, and to staff only while a request is disputed.
 - No secrets are committed. Configuration comes from the environment and is validated at startup.
 
 ## Known limitations
