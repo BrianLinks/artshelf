@@ -1,4 +1,5 @@
 import type { Db } from "../db/connection.js";
+import { ESCROWED_STATUSES } from "../requests/machine.js";
 
 /**
  * Double-entry ledger. Every journal entry has two or more lines whose signed amounts sum to zero.
@@ -16,33 +17,46 @@ export interface EntryLine {
 export interface NewEntry {
   kind: EntryKind;
   orderId?: number;
+  requestId?: number;
   memo: string;
   createdByUserId?: number | null;
   lines: EntryLine[];
 }
 
-function findAccount(db: Db, kind: string, userId: number | null, orderId: number | null): number | undefined {
+interface AccountOwner {
+  userId?: number;
+  orderId?: number;
+  requestId?: number;
+}
+
+function findAccount(db: Db, kind: string, owner: AccountOwner): number | undefined {
   const row = db
-    .prepare("SELECT id FROM accounts WHERE kind = ? AND user_id IS ? AND order_id IS ?")
-    .get(kind, userId, orderId) as { id: number } | undefined;
+    .prepare("SELECT id FROM accounts WHERE kind = ? AND user_id IS ? AND order_id IS ? AND request_id IS ?")
+    .get(kind, owner.userId ?? null, owner.orderId ?? null, owner.requestId ?? null) as { id: number } | undefined;
   return row?.id;
 }
 
 export function systemAccountId(db: Db, kind: "external" | "platform_revenue"): number {
-  const id = findAccount(db, kind, null, null);
+  const id = findAccount(db, kind, {});
   if (id === undefined) throw new Error(`System account missing: ${kind}`);
   return id;
 }
 
-function getOrCreate(db: Db, kind: "user_wallet" | "escrow", userId: number | null, orderId: number | null): number {
-  db.prepare("INSERT OR IGNORE INTO accounts (kind, user_id, order_id) VALUES (?, ?, ?)").run(kind, userId, orderId);
-  const id = findAccount(db, kind, userId, orderId);
+function getOrCreate(db: Db, kind: "user_wallet" | "escrow", owner: AccountOwner): number {
+  db.prepare("INSERT OR IGNORE INTO accounts (kind, user_id, order_id, request_id) VALUES (?, ?, ?, ?)").run(
+    kind,
+    owner.userId ?? null,
+    owner.orderId ?? null,
+    owner.requestId ?? null,
+  );
+  const id = findAccount(db, kind, owner);
   if (id === undefined) throw new Error("Account could not be created");
   return id;
 }
 
-export const walletAccountId = (db: Db, userId: number): number => getOrCreate(db, "user_wallet", userId, null);
-export const escrowAccountId = (db: Db, orderId: number): number => getOrCreate(db, "escrow", null, orderId);
+export const walletAccountId = (db: Db, userId: number): number => getOrCreate(db, "user_wallet", { userId });
+export const escrowAccountId = (db: Db, orderId: number): number => getOrCreate(db, "escrow", { orderId });
+export const requestEscrowAccountId = (db: Db, requestId: number): number => getOrCreate(db, "escrow", { requestId });
 
 export function balanceOf(db: Db, accountId: number): number {
   const row = db.prepare("SELECT COALESCE(SUM(amount_cents), 0) AS balance FROM ledger_lines WHERE account_id = ?").get(
@@ -64,8 +78,10 @@ export function postEntry(db: Db, entry: NewEntry): number {
 
   return db.transaction(() => {
     const info = db
-      .prepare("INSERT INTO journal_entries (kind, order_id, memo, created_by_user_id, created_at) VALUES (?, ?, ?, ?, ?)")
-      .run(entry.kind, entry.orderId ?? null, entry.memo, entry.createdByUserId ?? null, new Date().toISOString());
+      .prepare(
+        "INSERT INTO journal_entries (kind, order_id, request_id, memo, created_by_user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      )
+      .run(entry.kind, entry.orderId ?? null, entry.requestId ?? null, entry.memo, entry.createdByUserId ?? null, new Date().toISOString());
     const entryId = Number(info.lastInsertRowid);
     const insertLine = db.prepare("INSERT INTO ledger_lines (entry_id, account_id, amount_cents) VALUES (?, ?, ?)");
     for (const line of entry.lines) insertLine.run(entryId, line.accountId, line.amountCents);
@@ -154,12 +170,30 @@ export function verifyLedger(db: Db): LedgerReport {
     }
   }
 
+  const requests = db
+    .prepare(
+      `SELECT r.id, r.status, COALESCE(r.price_cents, 0) AS price_cents,
+              COALESCE((SELECT SUM(l.amount_cents) FROM accounts a JOIN ledger_lines l ON l.account_id = a.id
+                        WHERE a.kind = 'escrow' AND a.request_id = r.id), 0) AS held
+       FROM requests r`,
+    )
+    .all() as { id: number; status: string; price_cents: number; held: number }[];
+  for (const request of requests) {
+    const expected = (ESCROWED_STATUSES as readonly string[]).includes(request.status) ? request.price_cents : 0;
+    if (request.held !== expected) {
+      problems.push(`Request ${request.id} (${request.status}) holds ${request.held} in escrow, expected ${expected}`);
+    }
+  }
+
   const revenue = balanceOf(db, systemAccountId(db, "platform_revenue"));
   const commissions = db
-    .prepare("SELECT COALESCE(SUM(commission_cents), 0) AS total FROM orders WHERE status = 'completed'")
+    .prepare(
+      `SELECT (SELECT COALESCE(SUM(commission_cents), 0) FROM orders WHERE status = 'completed')
+            + (SELECT COALESCE(SUM(commission_cents), 0) FROM requests WHERE status = 'completed') AS total`,
+    )
     .get() as { total: number };
   if (revenue !== commissions.total) {
-    problems.push(`Platform revenue is ${revenue} but completed orders earned ${commissions.total} in commission`);
+    problems.push(`Platform revenue is ${revenue} but completed sales and commissions earned ${commissions.total}`);
   }
 
   const counts = db

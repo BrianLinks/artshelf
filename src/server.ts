@@ -4,6 +4,7 @@ import { openDatabase } from "./db/connection.js";
 import { migrate } from "./db/migrate.js";
 import { createApp } from "./http/app.js";
 import { releaseDueEscrows } from "./orders/service.js";
+import { autoApproveDue } from "./requests/service.js";
 
 const config = loadConfig();
 const db = openDatabase(config.DATABASE_PATH);
@@ -19,6 +20,8 @@ const hourly = (): void => {
   deleteExpiredSessions(db);
   const released = releaseDueEscrows(db);
   if (released > 0) console.log(`Auto-released ${released} escrowed order(s)`);
+  const approved = autoApproveDue(db);
+  if (approved > 0) console.log(`Auto-approved ${approved} delivered request(s)`);
 };
 hourly();
 const cleanup = setInterval(hourly, 60 * 60 * 1000);
