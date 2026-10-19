@@ -6,6 +6,11 @@ export interface Migration {
   id: number;
   name: string;
   sql: string;
+  /**
+   * Set when the migration rebuilds a table that other tables reference. Foreign keys are switched
+   * off around it (the documented SQLite procedure) and foreign_key_check must come back empty.
+   */
+  rebuildsTables?: boolean;
 }
 
 function checksum(sql: string): string {
@@ -49,10 +54,26 @@ export function migrate(db: Db, migrations: readonly Migration[] = MIGRATIONS): 
       }
       continue;
     }
-    db.transaction(() => {
+    const apply = db.transaction(() => {
       db.exec(migration.sql);
+      if (migration.rebuildsTables) {
+        const violations = db.pragma("foreign_key_check") as unknown[];
+        if (violations.length > 0) {
+          throw new Error(`Migration ${migration.id} (${migration.name}) left ${violations.length} foreign key violation(s)`);
+        }
+      }
       insert.run(migration.id, migration.name, sum, new Date().toISOString());
-    })();
+    });
+    if (migration.rebuildsTables) {
+      db.pragma("foreign_keys = OFF");
+      try {
+        apply();
+      } finally {
+        db.pragma("foreign_keys = ON");
+      }
+    } else {
+      apply();
+    }
     ranNow.push(migration.id);
   }
   return ranNow;
