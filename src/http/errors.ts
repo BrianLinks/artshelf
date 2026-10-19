@@ -50,6 +50,12 @@ const DOMAIN_STATUS: Record<string, number> = {
   already_purchased: 409,
   insufficient_funds: 402,
   invalid_order_state: 409,
+  invalid_request_state: 409,
+  already_proposed: 409,
+  cannot_propose_own_request: 409,
+  proposal_not_pending: 409,
+  price_exceeds_budget: 400,
+  revision_limit_reached: 409,
 };
 
 export const notFound: RequestHandler = (_req, _res, next) => {

@@ -5,6 +5,7 @@ import { listByStatus, PROFILE_STATUSES, transitionStatus } from "../../artists/
 import type { Db } from "../../db/connection.js";
 import { removeListing } from "../../listings/service.js";
 import { resolveDispute } from "../../orders/service.js";
+import { resolveRequestDispute } from "../../requests/service.js";
 import { parse } from "../errors.js";
 import { currentUser, requireRole } from "../middleware.js";
 
@@ -73,6 +74,13 @@ export function moderationRouter(db: Db): Router {
       return removed;
     })();
     res.json({ listing });
+  });
+
+  router.post("/requests/:id/resolve", (req, res) => {
+    const actor = currentUser(req);
+    const { id } = parse(orderIdParams, req.params);
+    const { outcome, note } = parse(resolveBody, req.body);
+    res.json({ request: resolveRequestDispute(db, actor.id, id, outcome, note) });
   });
 
   router.post("/orders/:id/resolve", (req, res) => {
