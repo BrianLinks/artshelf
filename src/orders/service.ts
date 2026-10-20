@@ -1,3 +1,4 @@
+import { notify, notifyAll } from "../notifications/notifications.js";
 import { recordAudit } from "../auth/audit.js";
 import type { Db } from "../db/connection.js";
 import { DomainError } from "../errors.js";
@@ -115,6 +116,7 @@ export function placeOrder(
       ],
     });
     recordAudit(db, { actorUserId: buyerId, action: "order.placed", targetType: "order", targetId: id });
+    notify(db, listing.artist.userId, { kind: "order_placed", title: "New sale", body: `"${listing.title}" was bought under the ${input.license} license.`, refType: "order", refId: id });
     return id;
   })();
   return view(db, orderId);
@@ -126,6 +128,7 @@ export function confirmOrder(db: Db, buyerId: number, id: number, now: Date = ne
     if (order.status !== "escrow") throw new DomainError("invalid_order_state", `Cannot confirm a ${order.status} order`);
     releaseEscrow(db, order, buyerId, `Order ${id} confirmed by buyer`, now);
     recordAudit(db, { actorUserId: buyerId, action: "order.confirmed", targetType: "order", targetId: id });
+    notify(db, order.artistUserId, { kind: "order_completed", title: "Payment released", body: `The buyer confirmed "${order.listingTitle}". Your payout is in your wallet.`, refType: "order", refId: id });
   })();
   return view(db, id);
 }
@@ -140,6 +143,7 @@ export function openDispute(db: Db, buyerId: number, id: number, reason: string,
       id,
     );
     recordAudit(db, { actorUserId: buyerId, action: "order.disputed", targetType: "order", targetId: id });
+    notify(db, order.artistUserId, { kind: "order_disputed", title: "Order disputed", body: `The buyer opened a dispute on "${order.listingTitle}". The payment is frozen until a moderator decides.`, refType: "order", refId: id });
   })();
   return view(db, id);
 }
@@ -152,6 +156,7 @@ export function sellerRefund(db: Db, artistId: number, id: number, now: Date = n
     if (order.status !== "escrow") throw new DomainError("invalid_order_state", `Cannot refund a ${order.status} order`);
     refundEscrow(db, order, artistId, `Order ${id} refunded by the artist`, now);
     recordAudit(db, { actorUserId: artistId, action: "order.refunded", targetType: "order", targetId: id });
+    notify(db, order.buyerUserId, { kind: "order_refunded", title: "Order refunded", body: `"${order.listingTitle}" was refunded to your wallet.`, refType: "order", refId: id });
   })();
   return view(db, id);
 }
@@ -179,6 +184,7 @@ export function resolveDispute(
       targetId: id,
       detail: { outcome, ...(note ? { note } : {}) },
     });
+    notifyAll(db, [order.buyerUserId, order.artistUserId], { kind: "order_dispute_resolved", title: "Dispute resolved", body: `The dispute on "${order.listingTitle}" was settled: ${outcome === "release" ? "payment released to the artist" : "refunded to the buyer"}.`, refType: "order", refId: id });
   })();
   return view(db, id);
 }
@@ -191,6 +197,7 @@ export function releaseDueEscrows(db: Db, now: Date = new Date()): number {
       const order = requireOrder(db, id);
       releaseEscrow(db, order, null, `Order ${id} auto-released after the hold period`, now);
       recordAudit(db, { actorUserId: null, action: "order.auto_released", targetType: "order", targetId: id });
+      notify(db, order.artistUserId, { kind: "order_completed", title: "Payment released", body: `"${order.listingTitle}" was released to you after the hold period.`, refType: "order", refId: id });
     })();
     released += 1;
   }

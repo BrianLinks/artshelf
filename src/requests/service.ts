@@ -1,3 +1,4 @@
+import { notify, notifyAll } from "../notifications/notifications.js";
 import { getProfile } from "../artists/profiles.js";
 import { recordAudit } from "../auth/audit.js";
 import { findById } from "../auth/users.js";
@@ -216,6 +217,7 @@ export function submitProposal(db: Db, artistId: number, requestId: number, inpu
       )
       .run(requestId, artistId, input.priceCents, input.message, input.deliveryDays, input.maxRevisions, timestamp, timestamp);
     if (request.status === "open") move(db, request, "proposed", artistId, "proposed", null, now);
+    notify(db, request.clientUserId, { kind: "proposal_received", title: "New proposal", body: `An artist bid on "${request.title}".`, refType: "request", refId: requestId });
     return Number(info.lastInsertRowid);
   })();
   return proposalView(db, proposalId);
@@ -313,6 +315,7 @@ export function acceptProposal(db: Db, clientId: number, requestId: number, prop
       proposal.id,
     );
     recordAudit(db, { actorUserId: clientId, action: "request.accepted", targetType: "request", targetId: requestId });
+    notify(db, proposal.artistUserId, { kind: "proposal_accepted", title: "Your proposal was accepted", body: `You were hired for "${request.title}". The payment is held in escrow.`, refType: "request", refId: requestId });
   })();
   return view(db, requestId);
 }
@@ -356,6 +359,7 @@ export function deliver(
       delivered_at: now.toISOString(),
       auto_approve_at: new Date(now.getTime() + config.REQUEST_AUTO_APPROVE_DAYS * DAY_MS).toISOString(),
     });
+    notify(db, request.clientUserId, { kind: "delivery_ready", title: "Delivery ready", body: `Your commission "${request.title}" has a new delivery to review.`, refType: "request", refId: id });
   })();
   return view(db, id);
 }
@@ -370,6 +374,7 @@ export function requestRevision(db: Db, clientId: number, id: number, note: stri
       revisions_used: request.revisionsUsed + 1,
       auto_approve_at: null,
     });
+    notifyAll(db, [request.artistUserId], { kind: "revision_requested", title: "Revision requested", body: `The client asked for changes on "${request.title}".`, refType: "request", refId: id });
   })();
   return view(db, id);
 }
@@ -380,6 +385,7 @@ export function approveDelivery(db: Db, clientId: number, id: number, now: Date 
     if (request.status !== "delivered") throw new DomainError("invalid_request_state", `Cannot approve a ${request.status} request`);
     move(db, request, "completed", clientId, "approved", null, now, { completed_at: now.toISOString(), auto_approve_at: null });
     releaseFunds(db, request, clientId, `Request ${id} approved by the client`);
+    notifyAll(db, [request.artistUserId], { kind: "request_completed", title: "Payment released", body: `The client approved "${request.title}". Your payout is in your wallet.`, refType: "request", refId: id });
   })();
   return view(db, id);
 }
@@ -393,6 +399,7 @@ export function autoApproveDue(db: Db, now: Date = new Date()): number {
       move(db, request, "completed", null, "auto_approved", null, now, { completed_at: now.toISOString(), auto_approve_at: null });
       releaseFunds(db, request, null, `Request ${id} auto-approved after the review period`);
       recordAudit(db, { actorUserId: null, action: "request.auto_approved", targetType: "request", targetId: id });
+      notifyAll(db, [request.artistUserId], { kind: "request_completed", title: "Payment released", body: `"${request.title}" was approved automatically after the review period.`, refType: "request", refId: id });
     })();
     approved += 1;
   }
@@ -411,6 +418,7 @@ export function openRequestDispute(db: Db, userId: number, id: number, reason: s
     }
     move(db, request, "disputed", userId, "disputed", reason, now, { dispute_reason: reason, auto_approve_at: null });
     recordAudit(db, { actorUserId: userId, action: "request.disputed", targetType: "request", targetId: id });
+    notifyAll(db, [request.clientUserId, request.artistUserId].filter((party) => party !== userId), { kind: "request_disputed", title: "Commission disputed", body: `A dispute was opened on "${request.title}". The payment is frozen until a moderator decides.`, refType: "request", refId: id });
   })();
   return view(db, id);
 }
@@ -424,6 +432,7 @@ export function artistWithdraw(db: Db, artistId: number, id: number, now: Date =
     }
     move(db, request, "refunded", artistId, "withdrawn", null, now);
     refundFunds(db, request, artistId, `Request ${id} withdrawn by the artist`);
+    notify(db, request.clientUserId, { kind: "request_refunded", title: "Commission refunded", body: `The artist withdrew from "${request.title}". Your payment was refunded.`, refType: "request", refId: id });
   })();
   return view(db, id);
 }
@@ -454,6 +463,7 @@ export function resolveRequestDispute(
       targetId: id,
       detail: { outcome, ...(note ? { note } : {}) },
     });
+    notifyAll(db, [request.clientUserId, request.artistUserId], { kind: "request_dispute_resolved", title: "Dispute resolved", body: `The dispute on "${request.title}" was settled: ${outcome === "release" ? "payment released to the artist" : "refunded to the client"}.`, refType: "request", refId: id });
   })();
   return view(db, id);
 }
