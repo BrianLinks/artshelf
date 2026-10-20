@@ -122,3 +122,29 @@ export async function fund(agent: Agent, amountCents: number): Promise<void> {
   const response = await agent.post("/api/wallet/deposit").send({ amountCents });
   if (response.status !== 201) throw new Error(`Deposit failed in test helper: ${response.status}`);
 }
+
+/** Buys a license and confirms the order so it completes. Returns the order id. */
+export async function completeSale(buyer: Agent, listingId: number, license = "commercial"): Promise<number> {
+  const placed = await buyer.post("/api/orders").send({ listingId, license });
+  if (placed.status !== 201) throw new Error(`Purchase failed in test helper: ${placed.status}`);
+  const confirmed = await buyer.post(`/api/orders/${placed.body.order.id}/confirm`);
+  if (confirmed.status !== 200) throw new Error(`Confirm failed in test helper: ${confirmed.status}`);
+  return placed.body.order.id;
+}
+
+/** Runs a commission from request to approval. The client needs at least $800.00 in the wallet. */
+export async function completeCommission(client: Agent, artist: Agent, color = 150): Promise<number> {
+  const created = await client
+    .post("/api/requests")
+    .send({ title: "Portrait of my cat", description: "A watercolor portrait.", category: "illustration", budgetCents: 100_000 });
+  const id: number = created.body.request.id;
+  await artist.post(`/api/requests/${id}/proposals`).send({ priceCents: 80_000, message: "Happy to.", deliveryDays: 5, maxRevisions: 2 });
+  const proposals = await client.get(`/api/requests/${id}/proposals`);
+  await client.post(`/api/requests/${id}/accept`).send({ proposalId: proposals.body.proposals[0].id });
+  await artist.post(`/api/requests/${id}/start`);
+  const uploaded = await upload(artist, { category: "illustration", filename: "done.png", data: await makePng(color, 20, 20) });
+  await artist.post(`/api/requests/${id}/deliver`).send({ assetId: uploaded.body.asset.id });
+  const approved = await client.post(`/api/requests/${id}/approve`);
+  if (approved.status !== 200) throw new Error(`Commission helper failed: ${approved.status}`);
+  return id;
+}

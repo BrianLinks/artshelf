@@ -1,6 +1,6 @@
 {
   "name": "artshelf",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Creative-services marketplace: artists, commissions, licenses, and a local escrow ledger. Runs fully offline.",
   "private": true,
   "type": "module",
