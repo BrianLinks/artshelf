@@ -12,9 +12,13 @@ import { catalogRouter } from "./routes/catalog.js";
 import { licensesRouter } from "./routes/licenses.js";
 import { listingsRouter } from "./routes/listings.js";
 import { moderationRouter } from "./routes/moderation.js";
+import { notificationsRouter } from "./routes/notifications.js";
 import { ordersRouter } from "./routes/orders.js";
 import { requestsRouter } from "./routes/requests.js";
+import { reviewsRouter } from "./routes/reviews.js";
 import { royaltiesRouter } from "./routes/royalties.js";
+import { supportRouter } from "./routes/support.js";
+import { takedownsRouter } from "./routes/takedowns.js";
 import { walletRouter } from "./routes/wallet.js";
 
 export function createApp(db: Db, config: Config): Express {
@@ -39,6 +43,10 @@ export function createApp(db: Db, config: Config): Express {
   app.use("/api/orders", ordersRouter(db, config, storage));
   app.use("/api/requests", requestsRouter(db, config, storage));
   app.use("/api/royalties", royaltiesRouter(db));
+  app.use("/api/reviews", reviewsRouter(db));
+  app.use("/api/support", supportRouter(db));
+  app.use("/api/takedowns", takedownsRouter(db));
+  app.use("/api/notifications", notificationsRouter(db));
   app.use("/api/moderation", moderationRouter(db));
   app.use("/api/admin", adminRouter(db));
 

@@ -5,6 +5,9 @@ import { listByStatus, PROFILE_STATUSES, transitionStatus } from "../../artists/
 import type { Db } from "../../db/connection.js";
 import { removeListing } from "../../listings/service.js";
 import { resolveDispute } from "../../orders/service.js";
+import { dismissFlags, hideReview, listForModeration, restoreReview } from "../../reviews/service.js";
+import { closeNotice, listByStatus as listNoticesByStatus, reinstateNotice, rejectNotice, toNoticeView, upholdNotice } from "../../takedowns/service.js";
+import { NOTICE_STATUSES } from "../../takedowns/machine.js";
 import { resolveRequestDispute } from "../../requests/service.js";
 import { parse } from "../errors.js";
 import { currentUser, requireRole } from "../middleware.js";
@@ -18,6 +21,18 @@ const listQuery = z.object({
 const listingIdParams = z.object({ id: z.coerce.number().int().positive() });
 const orderIdParams = z.object({ id: z.coerce.number().int().positive() });
 const resolveBody = z.object({ outcome: z.enum(["release", "refund"]), note: z.string().trim().max(500).optional() });
+const reviewIdParams = z.object({ id: z.coerce.number().int().positive() });
+const reviewListQuery = z.object({
+  status: z.enum(["flagged", "hidden"]).default("flagged"),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+const noticeListQuery = z.object({
+  status: z.enum(NOTICE_STATUSES).default("received"),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+const noteBody = z.object({ note: z.string().trim().max(500).optional() });
 const rejectBody = z.object({ reason: z.string().trim().max(500).optional() });
 
 export function moderationRouter(db: Db): Router {
@@ -75,6 +90,43 @@ export function moderationRouter(db: Db): Router {
     })();
     res.json({ listing });
   });
+
+  router.get("/reviews", (req, res) => {
+    const query = parse(reviewListQuery, req.query);
+    res.json({ reviews: listForModeration(db, query.status, query.limit, query.offset) });
+  });
+
+  router.post("/reviews/:id/hide", (req, res) => {
+    const { id } = parse(reviewIdParams, req.params);
+    const { note } = parse(noteBody, req.body ?? {});
+    res.json({ review: hideReview(db, currentUser(req).id, id, note) });
+  });
+
+  router.post("/reviews/:id/dismiss", (req, res) => {
+    const { id } = parse(reviewIdParams, req.params);
+    const { note } = parse(noteBody, req.body ?? {});
+    res.json({ review: dismissFlags(db, currentUser(req).id, id, note) });
+  });
+
+  router.post("/reviews/:id/restore", (req, res) => {
+    const { id } = parse(reviewIdParams, req.params);
+    const { note } = parse(noteBody, req.body ?? {});
+    res.json({ review: restoreReview(db, currentUser(req).id, id, note) });
+  });
+
+  router.get("/takedowns", (req, res) => {
+    const query = parse(noticeListQuery, req.query);
+    res.json({ notices: listNoticesByStatus(db, query.status, query.limit, query.offset).map(toNoticeView) });
+  });
+
+  const noticeActions = { uphold: upholdNotice, reject: rejectNotice, reinstate: reinstateNotice, close: closeNotice };
+  for (const [action, handler] of Object.entries(noticeActions)) {
+    router.post(`/takedowns/:id/${action}`, (req, res) => {
+      const { id } = parse(reviewIdParams, req.params);
+      const { note } = parse(noteBody, req.body ?? {});
+      res.json({ notice: handler(db, currentUser(req).id, id, note) });
+    });
+  }
 
   router.post("/requests/:id/resolve", (req, res) => {
     const actor = currentUser(req);

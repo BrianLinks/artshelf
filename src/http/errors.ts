@@ -56,6 +56,17 @@ const DOMAIN_STATUS: Record<string, number> = {
   proposal_not_pending: 409,
   price_exceeds_budget: 400,
   revision_limit_reached: 409,
+  not_reviewable: 409,
+  already_reviewed: 409,
+  cannot_flag_own_review: 409,
+  already_flagged: 409,
+  invalid_review_state: 409,
+  ticket_closed: 409,
+  invalid_ticket_state: 409,
+  too_many_tickets: 429,
+  cannot_claim_own_listing: 409,
+  notice_exists: 409,
+  invalid_notice_state: 409,
 };
 
 export const notFound: RequestHandler = (_req, _res, next) => {
