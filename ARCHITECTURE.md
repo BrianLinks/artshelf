@@ -11,6 +11,10 @@ src/
   auth/              users, passwords, sessions, roles, audit log (no HTTP knowledge)
   catalog/           category lookups and per-category upload rules
   artists/           artist profiles, approval state machine, tiers
+  reviews/           verified-purchase reviews, rating math, report moderation
+  support/           support tickets and the help center
+  takedowns/         copyright notice and counter-notice flow
+  notifications/     in-app outbox
   requests/          request board: state machine, repository, service
   ledger/            double-entry ledger, wallet operations, reconciliation
   orders/            order repository, escrow service, commission pricing
@@ -34,7 +38,7 @@ Authorization is declared where routes are mounted. The admin router applies `re
 
 ## Data
 
-SQLite with `foreign_keys = ON` and WAL. Schema changes are TypeScript migration modules applied in order and checksummed (ADR 0003). Tables so far: `users`, `sessions`, `audit_log`, `schema_migrations`, `categories` (seeded), `artist_profiles`, `assets`, `listings`, `listing_licenses`, `listing_tags`, `orders`, `accounts`, `journal_entries`, `ledger_lines`, `requests`, `proposals`, `request_deliveries`, `request_events`. Timestamps are ISO-8601 UTC strings. Money will be integer cents (ADR 0001).
+SQLite with `foreign_keys = ON` and WAL. Schema changes are TypeScript migration modules applied in order and checksummed (ADR 0003). Tables so far: `users`, `sessions`, `audit_log`, `schema_migrations`, `categories` (seeded), `artist_profiles`, `assets`, `listings`, `listing_licenses`, `listing_tags`, `orders`, `accounts`, `journal_entries`, `ledger_lines`, `requests`, `proposals`, `request_deliveries`, `request_events`, `reviews`, `review_flags`, `tickets`, `ticket_messages`, `takedown_notices`, `notifications`. Timestamps are ISO-8601 UTC strings. Money will be integer cents (ADR 0001).
 
 ## Validation and errors
 
@@ -55,6 +59,10 @@ Every movement of money is a journal entry whose lines sum to zero; an account's
 ## Request board
 
 A client posts a request; approved artists bid; the client accepts one bid, which funds an escrow account for that request. Status follows a transition table in `requests/machine.ts`: `open <-> proposed -> accepted -> in_progress -> delivered <-> revised`, then `completed`; `disputed` can be entered from any funded state; `cancelled` (before acceptance) and `refunded` and `completed` are terminal. The table says which moves exist; the service adds who may make them (for example only the client approves, only staff resolve a dispute). Every move goes through one function that updates the status and appends to `request_events`, an append-only history. The accepted proposal's price, commission and revision allowance are snapshotted on the request. Delivered files are versioned, stay private to the parties (staff only during a dispute) and cannot be deleted. Unanswered deliveries are approved automatically after `REQUEST_AUTO_APPROVE_DAYS`. See ADR 0007.
+
+## Reviews, support and takedowns
+
+Reviews are gated by completion: only the buyer of a completed order or the client of a completed commission can review, once each (partial unique indexes). Ratings are computed from counts per star with integer arithmetic (no float drift); hidden reviews never count and reported ones count until staff decide. Support tickets and takedown notices each have a small tested transition table, ticket messages are append-only, and internal staff notes are filtered out for requesters. A successful takedown counter-notice is the only way a removed listing returns, and it returns as a draft. Business events write to the notifications outbox inside the same transaction as the change that caused them. The help center's numbers (commission rates, license multiples, upload limits) are generated from the same constants the code uses. See ADR 0008.
 
 ## Upload pipeline
 

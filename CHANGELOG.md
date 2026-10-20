@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+## [0.6.0] - Milestone 6
+
+### Added
+- Verified-purchase reviews for completed orders and commissions (one each), editing with an edited marker, abuse reports and a moderator queue (hide, dismiss, restore).
+- Integer-only rating summaries with distributions, on listings and per artist.
+- Support desk: tickets with a status workflow, internal staff notes, assignment, queue, and a searchable help center whose numbers come from the code's constants.
+- Copyright takedown notices with sworn statements, staff decisions, counter-notices and reinstatement.
+- In-app notification outbox, with events from orders, commissions, reviews, support and takedowns.
+
+### Changed
+- Listings expose a `rating` summary. Removed listings can return to draft only through a successful counter-notice; artists can no longer unpublish a removed listing.
+
 ## [0.5.0] - Milestone 5
 
 ### Added

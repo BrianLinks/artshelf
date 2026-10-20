@@ -26,6 +26,10 @@ Please do not open a public issue. Email the maintainer (see the GitHub profile 
 - Purchases, escrow moves and refunds run inside single database transactions together with their ledger entries and audit records, so a failure leaves nothing half-done.
 - Commission state changes go through a single transition function backed by a tested state machine, with actor checks on top, so a client cannot approve disputed work and an artist cannot withdraw frozen funds.
 - Request history is append-only (database triggers). Delivered files are visible to the two parties, and to staff only while a request is disputed.
+- Reviews require a completed, verified purchase and are limited to one per order or commission; moderation details are never shown publicly, and hidden reviews are removed from ratings.
+- Support tickets are private to the requester and staff, and internal staff notes are never returned to requesters. Ticket creation is capped per user.
+- Copyright notices need sworn statements and a signature; a listing only comes down by a staff decision and only returns through a counter-notice review.
+- Notifications are private to their owner; other users get 404.
 - No secrets are committed. Configuration comes from the environment and is validated at startup.
 
 ## Known limitations

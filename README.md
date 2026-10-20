@@ -2,7 +2,7 @@
 
 A creative-services marketplace: clients browse artists by category, hire them under explicit usage licenses, and pay through a local escrow-style ledger. Everything runs offline with no paid APIs.
 
-**Status: milestone 5 of 8.** Implemented so far: tooling, migrations, accounts and roles, the category taxonomy, artist profiles, validated uploads, the license engine with listings, simulated payments with escrow and a double-entry ledger, and the Request Board for custom commissions. Reviews, the support desk, search and the UI are planned and not built yet. See [CHANGELOG.md](CHANGELOG.md).
+**Status: milestone 6 of 8.** Implemented so far: tooling, migrations, accounts and roles, the category taxonomy, artist profiles, validated uploads, the license engine with listings, simulated payments with escrow and a double-entry ledger, the Request Board for custom commissions, verified reviews with ratings, a support desk with a help center, copyright takedown notices, and an in-app notification outbox. Search and the React UI are planned and not built yet. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Requirements
 
@@ -93,6 +93,21 @@ npm run dev              # http://localhost:3000
 | `POST /api/requests/:id/dispute` | client or artist | Freeze a funded request |
 | `GET /api/requests/:id/delivery`, `/events` | parties (staff while disputed / always for events) | Latest delivered file and the change history |
 | `POST /api/moderation/requests/:id/resolve` | moderator, admin | Settle a dispute: `release` or `refund` |
+
+| `GET /api/reviews?artist=` or `?listing=` | public | Reviews plus the artist's rating summary |
+| `GET /api/reviews/artist/:id/rating`, `GET /api/reviews/:id` | public | Rating summary; one review (reviewer and staff also see moderation state) |
+| `POST /api/reviews` | buyer or client | Review a completed order (`orderId`) or commission (`requestId`), once |
+| `PUT /api/reviews/:id`, `POST /api/reviews/:id/flag` | reviewer / anyone else | Edit your review; report one as `spam`, `abusive`, `off_topic` or `other` |
+| `GET /api/reviews/reviewable` | signed in | Completed purchases and commissions you have not reviewed |
+| `GET /api/moderation/reviews`, `POST .../reviews/:id/hide`, `/dismiss`, `/restore` | moderator, admin | Review reports queue and decisions |
+| `GET /api/support/help`, `/help/:slug` | public | Help center articles, searchable with `?q=` |
+| `POST /api/support/tickets`, `GET /api/support/tickets`, `GET .../:id`, `POST .../:id/messages`, `/close` | signed in | Open and follow your support tickets |
+| `GET /api/support/queue`, `POST .../tickets/:id/assign`, `/resolve` | moderator, admin | Staff queue; staff may add internal notes with `internal: true` |
+| `POST /api/takedowns` | signed in | File a copyright notice against a listing (sworn statements and a signature) |
+| `GET /api/takedowns/mine`, `/against-me`, `/:id` | claimant, artist, staff | Notices you filed, notices against you, one notice |
+| `POST /api/takedowns/:id/counter` | listing's artist | Counter-notice after an upheld removal |
+| `GET /api/moderation/takedowns`, `POST .../takedowns/:id/uphold`, `/reject`, `/reinstate`, `/close` | moderator, admin | Decide notices and counter-notices |
+| `GET /api/notifications`, `POST .../:id/read`, `POST .../read-all` | signed in | Your in-app messages (`?unread=true`) |
 
 Commissions follow the same simulated money rules as sales. Money is simulated: deposits come from an internal external account and no payment provider is involved. A paid order sits in escrow for `ESCROW_HOLD_DAYS` (default 7), then is released automatically unless the buyer opened a dispute. Commission is 15% for standard artists and 10% for premium artists, snapshotted on each order.
 
