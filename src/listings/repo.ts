@@ -2,6 +2,8 @@ import type { Db } from "../db/connection.js";
 import { LICENSE_TYPES, licensePrice, type LicenseType } from "../licenses/definitions.js";
 import { cents } from "../money.js";
 import type { Tier } from "../artists/profiles.js";
+import { emptyDistribution, summarizeRatings, type RatingSummary } from "../reviews/rating.js";
+import { listingRatings } from "../reviews/stats.js";
 
 export const LISTING_STATUSES = ["draft", "published", "removed"] as const;
 export type ListingStatus = (typeof LISTING_STATUSES)[number];
@@ -98,7 +100,7 @@ export function findListingByAsset(db: Db, assetId: number): { id: number; statu
 }
 
 /** The shape sent to clients. Storage names and the asset id stay internal. */
-export function toView(record: ListingRecord, licenses: LicenseType[], tags: string[]) {
+export function toView(record: ListingRecord, licenses: LicenseType[], tags: string[], rating: RatingSummary) {
   return {
     id: record.id,
     title: record.title,
@@ -112,6 +114,7 @@ export function toView(record: ListingRecord, licenses: LicenseType[], tags: str
       priceCents: licensePrice(cents(record.basePriceCents), license),
     })),
     tags,
+    rating,
     artist: { userId: record.artistUserId, displayName: record.artistDisplayName, tier: record.artistTier },
     asset: {
       mime: record.assetMime,
@@ -142,11 +145,12 @@ export function hydrate(db: Db, records: ListingRecord[]): ListingView[] {
   const tagsById = new Map<number, string[]>();
   for (const row of tagRows) tagsById.set(row.listing_id, [...(tagsById.get(row.listing_id) ?? []), row.tag]);
 
+  const ratings = listingRatings(db, ids);
   return records.map((record) => {
     const licenses = (licensesById.get(record.id) ?? []).sort(
       (a, b) => LICENSE_TYPES.indexOf(a) - LICENSE_TYPES.indexOf(b),
     );
-    return toView(record, licenses, tagsById.get(record.id) ?? []);
+    return toView(record, licenses, tagsById.get(record.id) ?? [], ratings.get(record.id) ?? summarizeRatings(emptyDistribution()));
   });
 }
 

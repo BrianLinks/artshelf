@@ -17,7 +17,7 @@ export interface ListingInput {
 const TRANSITIONS: Record<ListingStatus, readonly ListingStatus[]> = {
   draft: ["published", "removed"],
   published: ["draft", "removed"],
-  removed: [],
+  removed: ["draft"], // only through a successful counter-notice, see reinstateListing
 };
 
 function view(db: Db, id: number): ListingView {
@@ -105,7 +105,9 @@ export function publishListing(db: Db, artistId: number, id: number): ListingVie
 }
 
 export function unpublishListing(db: Db, artistId: number, id: number): ListingView {
-  return changeStatus(db, ownedRecord(db, artistId, id), "draft");
+  const record = ownedRecord(db, artistId, id);
+  if (record.status !== "published") throw new DomainError("invalid_listing_state", `Cannot unpublish a ${record.status} listing`);
+  return changeStatus(db, record, "draft");
 }
 
 /** Moderator takedown. Terminal: the artist cannot republish a removed listing. */
@@ -113,4 +115,12 @@ export function removeListing(db: Db, id: number): ListingView {
   const record = getRecord(db, id);
   if (!record) throw new DomainError("not_found", "Listing not found");
   return changeStatus(db, record, "removed");
+}
+
+/** Brings a removed listing back as a draft. Only a resolved takedown dispute should call this. */
+export function reinstateListing(db: Db, id: number): ListingView {
+  const record = getRecord(db, id);
+  if (!record) throw new DomainError("not_found", "Listing not found");
+  if (record.status !== "removed") throw new DomainError("invalid_listing_state", "Only removed listings can be reinstated");
+  return changeStatus(db, record, "draft");
 }
