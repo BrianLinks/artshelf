@@ -17,6 +17,7 @@ import { ordersRouter } from "./routes/orders.js";
 import { requestsRouter } from "./routes/requests.js";
 import { reviewsRouter } from "./routes/reviews.js";
 import { royaltiesRouter } from "./routes/royalties.js";
+import { searchRouter } from "./routes/search.js";
 import { supportRouter } from "./routes/support.js";
 import { takedownsRouter } from "./routes/takedowns.js";
 import { walletRouter } from "./routes/wallet.js";
@@ -43,6 +44,7 @@ export function createApp(db: Db, config: Config): Express {
   app.use("/api/orders", ordersRouter(db, config, storage));
   app.use("/api/requests", requestsRouter(db, config, storage));
   app.use("/api/royalties", royaltiesRouter(db));
+  app.use("/api/search", searchRouter(db));
   app.use("/api/reviews", reviewsRouter(db));
   app.use("/api/support", supportRouter(db));
   app.use("/api/takedowns", takedownsRouter(db));

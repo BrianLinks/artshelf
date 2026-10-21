@@ -56,6 +56,7 @@ const DOMAIN_STATUS: Record<string, number> = {
   proposal_not_pending: 409,
   price_exceeds_budget: 400,
   revision_limit_reached: 409,
+  no_palette: 400,
   not_reviewable: 409,
   already_reviewed: 409,
   cannot_flag_own_review: 409,
