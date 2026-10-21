@@ -4,6 +4,8 @@ import { cents } from "../money.js";
 import type { Tier } from "../artists/profiles.js";
 import { emptyDistribution, summarizeRatings, type RatingSummary } from "../reviews/rating.js";
 import { listingRatings } from "../reviews/stats.js";
+import { toHex, type PaletteColor } from "../search/color.js";
+import { loadPalettes } from "../search/palettes.js";
 
 export const LISTING_STATUSES = ["draft", "published", "removed"] as const;
 export type ListingStatus = (typeof LISTING_STATUSES)[number];
@@ -100,7 +102,7 @@ export function findListingByAsset(db: Db, assetId: number): { id: number; statu
 }
 
 /** The shape sent to clients. Storage names and the asset id stay internal. */
-export function toView(record: ListingRecord, licenses: LicenseType[], tags: string[], rating: RatingSummary) {
+export function toView(record: ListingRecord, licenses: LicenseType[], tags: string[], rating: RatingSummary, palette: PaletteColor[]) {
   return {
     id: record.id,
     title: record.title,
@@ -121,6 +123,7 @@ export function toView(record: ListingRecord, licenses: LicenseType[], tags: str
       width: record.assetWidth,
       height: record.assetHeight,
       previewUrl: record.thumbName ? `/api/listings/${record.id}/preview` : null,
+      palette: palette.map((color) => ({ hex: toHex(color), weightBps: color.weightBps })),
     },
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
@@ -146,11 +149,12 @@ export function hydrate(db: Db, records: ListingRecord[]): ListingView[] {
   for (const row of tagRows) tagsById.set(row.listing_id, [...(tagsById.get(row.listing_id) ?? []), row.tag]);
 
   const ratings = listingRatings(db, ids);
+  const palettes = loadPalettes(db, records.map((record) => record.assetId));
   return records.map((record) => {
     const licenses = (licensesById.get(record.id) ?? []).sort(
       (a, b) => LICENSE_TYPES.indexOf(a) - LICENSE_TYPES.indexOf(b),
     );
-    return toView(record, licenses, tagsById.get(record.id) ?? [], ratings.get(record.id) ?? summarizeRatings(emptyDistribution()));
+    return toView(record, licenses, tagsById.get(record.id) ?? [], ratings.get(record.id) ?? summarizeRatings(emptyDistribution()), palettes.get(record.assetId) ?? []);
   });
 }
 
@@ -184,7 +188,10 @@ export interface PublicFilters {
   offset: number;
 }
 
-export function listPublic(db: Db, filters: PublicFilters): { listings: ListingView[]; total: number } {
+export type PublicFilterInput = Omit<PublicFilters, "sort" | "limit" | "offset">;
+
+/** The WHERE clause for public browsing and search. Aliases: l = listings, c = categories, u = users, p = artist_profiles. */
+export function buildPublicFilter(filters: PublicFilterInput): { where: string; params: (string | number)[] } {
   const conditions = [...PUBLIC_CONDITIONS];
   const params: (string | number)[] = [];
   if (filters.category) {
@@ -211,7 +218,11 @@ export function listPublic(db: Db, filters: PublicFilters): { listings: ListingV
     conditions.push("l.artist_user_id = ?");
     params.push(filters.artist);
   }
-  const where = conditions.join(" AND ");
+  return { where: conditions.join(" AND "), params };
+}
+
+export function listPublic(db: Db, filters: PublicFilters): { listings: ListingView[]; total: number } {
+  const { where, params } = buildPublicFilter(filters);
   const rows = db
     .prepare(`${SELECT} WHERE ${where} ORDER BY ${ORDER_BY[filters.sort]} LIMIT ? OFFSET ?`)
     .all(...params, filters.limit, filters.offset) as ListingRow[];
@@ -225,4 +236,14 @@ export function listPublic(db: Db, filters: PublicFilters): { listings: ListingV
     )
     .get(...params) as { total: number };
   return { listings: hydrate(db, rows.map(toRecord)), total: count.total };
+}
+
+/** Records for the given ids, in the same order. Missing ids are skipped. */
+export function getRecordsInOrder(db: Db, ids: readonly number[]): ListingRecord[] {
+  const records: ListingRecord[] = [];
+  for (const id of ids) {
+    const record = getRecord(db, id);
+    if (record) records.push(record);
+  }
+  return records;
 }

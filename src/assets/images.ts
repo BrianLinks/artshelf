@@ -1,12 +1,16 @@
 import sharp from "sharp";
+import { extractPalette, type PaletteColor } from "../search/color.js";
 
 export const MAX_PIXELS = 40_000_000;
 export const THUMBNAIL_SIZE = 320;
+const PALETTE_SAMPLE_SIZE = 32;
 
 export interface ProcessedImage {
   width: number;
   height: number;
   thumbnail: Buffer;
+  /** Up to five dominant colors, used for "search by inspiration". */
+  palette: PaletteColor[];
 }
 
 /**
@@ -23,5 +27,13 @@ export async function processImage(data: Buffer): Promise<ProcessedImage> {
     .resize(THUMBNAIL_SIZE, THUMBNAIL_SIZE, { fit: "inside", withoutEnlargement: true })
     .webp({ quality: 80 })
     .toBuffer();
-  return { width, height, thumbnail };
+  const sample = await image
+    .clone()
+    .rotate()
+    .flatten({ background: "#ffffff" })
+    .resize(PALETTE_SAMPLE_SIZE, PALETTE_SAMPLE_SIZE, { fit: "inside" })
+    .removeAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  return { width, height, thumbnail, palette: extractPalette(sample.data, sample.info.channels) };
 }

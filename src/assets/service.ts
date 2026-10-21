@@ -4,6 +4,8 @@ import { findCategoryBySlug } from "../catalog/categories.js";
 import type { Config } from "../config.js";
 import type { Db } from "../db/connection.js";
 import { DomainError } from "../errors.js";
+import type { PaletteColor } from "../search/color.js";
+import { savePalette } from "../search/palettes.js";
 import { processImage } from "./images.js";
 import { findAssetByHash, insertAsset, storageUsedBy, type AssetRecord } from "./repo.js";
 import { detectFormat, FORMAT_INFO } from "./signatures.js";
@@ -49,12 +51,14 @@ export async function uploadAsset({ db, storage, config }: UploadDeps, input: Up
   let width: number | null = null;
   let height: number | null = null;
   let thumbnail: Buffer | null = null;
+  let palette: PaletteColor[] = [];
   if (info.image) {
     try {
       const processed = await processImage(input.data);
       width = processed.width;
       height = processed.height;
       thumbnail = processed.thumbnail;
+      palette = processed.palette;
     } catch {
       throw new DomainError("invalid_image", "The image could not be decoded");
     }
@@ -75,18 +79,22 @@ export async function uploadAsset({ db, storage, config }: UploadDeps, input: Up
   if (thumbName && thumbnail) await storage.write(thumbName, thumbnail);
 
   try {
-    return insertAsset(db, {
-      ownerUserId: input.ownerId,
-      categoryId: category.id,
-      originalName: sanitizeFilename(input.filename),
-      storedName,
-      thumbName,
-      mime: info.mime,
-      sizeBytes: input.data.length,
-      width,
-      height,
-      sha256,
-    });
+    return db.transaction(() => {
+      const record = insertAsset(db, {
+        ownerUserId: input.ownerId,
+        categoryId: category.id,
+        originalName: sanitizeFilename(input.filename),
+        storedName,
+        thumbName,
+        mime: info.mime,
+        sizeBytes: input.data.length,
+        width,
+        height,
+        sha256,
+      });
+      savePalette(db, record.id, palette);
+      return record;
+    })();
   } catch (error) {
     await storage.remove(storedName);
     if (thumbName) await storage.remove(thumbName);

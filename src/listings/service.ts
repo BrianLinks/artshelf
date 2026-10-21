@@ -4,6 +4,7 @@ import { findCategoryBySlug } from "../catalog/categories.js";
 import type { Db } from "../db/connection.js";
 import { DomainError } from "../errors.js";
 import type { LicenseType } from "../licenses/definitions.js";
+import { indexListing } from "../search/indexer.js";
 import { getRecord, getView, type ListingRecord, type ListingStatus, type ListingView } from "./repo.js";
 
 export interface ListingInput {
@@ -67,6 +68,7 @@ export function createListing(db: Db, artistId: number, input: ListingInput & { 
       throw error;
     }
     replaceChildren(db, listingId, input);
+    indexListing(db, listingId);
     return listingId;
   })();
   return view(db, id);
@@ -84,6 +86,7 @@ export function updateListing(db: Db, artistId: number, id: number, input: Listi
       id,
     );
     replaceChildren(db, id, input);
+    indexListing(db, id);
   })();
   return view(db, id);
 }
