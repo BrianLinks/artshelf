@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+## [0.7.0] - Milestone 7
+
+### Added
+- Full-text search over listings with SQLite FTS5: prefix matching, accent and case folding, BM25 ranking weighted toward titles and tags, artist and category search.
+- Color search ("search by inspiration"): deterministic five-color palettes for every uploaded image, CIELAB palette similarity, search by a wanted color or by similarity to another listing.
+- Palettes on listing views, a `reindex` script to rebuild the index and backfill palettes, and a single `/api/search` endpoint combining text, color and the browse filters.
+
+### Fixed
+- The migration test no longer assumes exactly one migration follows the table-rebuild migration.
+
 ## [0.6.0] - Milestone 6
 
 ### Added

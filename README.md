@@ -2,7 +2,7 @@
 
 A creative-services marketplace: clients browse artists by category, hire them under explicit usage licenses, and pay through a local escrow-style ledger. Everything runs offline with no paid APIs.
 
-**Status: milestone 6 of 8.** Implemented so far: tooling, migrations, accounts and roles, the category taxonomy, artist profiles, validated uploads, the license engine with listings, simulated payments with escrow and a double-entry ledger, the Request Board for custom commissions, verified reviews with ratings, a support desk with a help center, copyright takedown notices, and an in-app notification outbox. Search and the React UI are planned and not built yet. See [CHANGELOG.md](CHANGELOG.md).
+**Status: milestone 7 of 8.** Implemented so far: tooling, migrations, accounts and roles, the category taxonomy, artist profiles, validated uploads, the license engine with listings, simulated payments with escrow and a double-entry ledger, the Request Board for custom commissions, verified reviews with ratings, a support desk with a help center, copyright takedown notices, and an in-app notification outbox. Local search (full-text plus color, "search by inspiration") is done. The React UI is planned and not built yet. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Requirements
 
@@ -108,6 +108,10 @@ npm run dev              # http://localhost:3000
 | `POST /api/takedowns/:id/counter` | listing's artist | Counter-notice after an upheld removal |
 | `GET /api/moderation/takedowns`, `POST .../takedowns/:id/uphold`, `/reject`, `/reinstate`, `/close` | moderator, admin | Decide notices and counter-notices |
 | `GET /api/notifications`, `POST .../:id/read`, `POST .../read-all` | signed in | Your in-app messages (`?unread=true`) |
+
+| `GET /api/search` | public | Search published listings. `q` (words, prefix match, accents ignored), `color` (hex such as `dc1414`; encode `#` as `%23`) or `similarTo` (a listing id), plus the browse filters. `sort` = `relevance` (default), `newest`, `price_asc`, `price_desc` |
+
+Search is fully local: SQLite FTS5 ranks text matches (title and tags count most), and each uploaded image gets a deterministic five-color palette. A color search ranks listings by perceptual (CIELAB) distance between palettes; `similarTo` uses another listing's palette. Run `npm run reindex` to rebuild the text index and compute palettes for older uploads.
 
 Commissions follow the same simulated money rules as sales. Money is simulated: deposits come from an internal external account and no payment provider is involved. A paid order sits in escrow for `ESCROW_HOLD_DAYS` (default 7), then is released automatically unless the buyer opened a dispute. Commission is 15% for standard artists and 10% for premium artists, snapshotted on each order.
 

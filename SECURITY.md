@@ -30,6 +30,8 @@ Please do not open a public issue. Email the maintainer (see the GitHub profile 
 - Support tickets are private to the requester and staff, and internal staff notes are never returned to requesters. Ticket creation is capped per user.
 - Copyright notices need sworn statements and a signature; a listing only comes down by a staff decision and only returns through a counter-notice review.
 - Notifications are private to their owner; other users get 404.
+- Search input is reduced to letters and digits and quoted before reaching SQLite FTS5, and every query is parameterized; FTS operators, quotes and SQL fragments cannot change the query. Query length and word count are capped.
+- Search can only return publicly visible listings; drafts, removed listings and unapproved or disabled artists never appear.
 - No secrets are committed. Configuration comes from the environment and is validated at startup.
 
 ## Known limitations
