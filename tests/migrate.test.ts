@@ -12,7 +12,7 @@ describe("migrate", () => {
   it("creates the schema and records applied migrations", () => {
     const db = openDatabase(":memory:");
     expect(migrate(db)).toEqual(MIGRATIONS.map((migration) => migration.id));
-    expect(tableNames(db)).toEqual(expect.arrayContaining(["users", "sessions", "audit_log", "schema_migrations", "categories", "artist_profiles", "assets", "listings", "listing_licenses", "listing_tags"]));
+    expect(tableNames(db)).toEqual(expect.arrayContaining(["users", "sessions", "audit_log", "schema_migrations", "categories", "artist_profiles", "assets", "listings", "listing_licenses", "listing_tags", "requests", "reviews", "tickets", "notifications", "asset_colors", "listing_search"]));
   });
 
   it("is idempotent", () => {
@@ -92,7 +92,7 @@ describe("migrations that rebuild tables", () => {
     db.prepare("INSERT INTO journal_entries (kind, memo, created_at) VALUES ('deposit', 'm', 't')").run();
     db.prepare("INSERT INTO ledger_lines (entry_id, account_id, amount_cents) VALUES (1, 1, -500), (1, 3, 500)").run();
 
-    expect(migrate(db)).toEqual([5]);
+    expect(migrate(db)).toEqual(MIGRATIONS.slice(4).map((migration) => migration.id));
 
     expect(db.prepare("SELECT COUNT(*) AS n FROM accounts").get()).toEqual({ n: 3 });
     expect(db.prepare("SELECT SUM(amount_cents) AS total FROM ledger_lines WHERE account_id = 3").get()).toEqual({ total: 500 });

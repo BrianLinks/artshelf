@@ -1,6 +1,6 @@
 {
   "name": "artshelf",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Creative-services marketplace: artists, commissions, licenses, and a local escrow ledger. Runs fully offline.",
   "private": true,
   "type": "module",
@@ -15,7 +15,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "migrate": "tsx src/scripts/migrate.ts",
-    "create-admin": "tsx src/scripts/create-admin.ts"
+    "create-admin": "tsx src/scripts/create-admin.ts",
+    "reindex": "tsx src/scripts/reindex.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
