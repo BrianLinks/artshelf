@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import express, { type Express } from "express";
 import { LocalStorage } from "../assets/storage.js";
 import type { Config } from "../config.js";
@@ -52,7 +54,34 @@ export function createApp(db: Db, config: Config): Express {
   app.use("/api/moderation", moderationRouter(db));
   app.use("/api/admin", adminRouter(db));
 
+  serveWebApp(app, config.WEB_DIST);
+
   app.use(notFound);
   app.use(errorHandler);
   return app;
+}
+
+/** Restricts what the page may load: only this site's own scripts, styles and images. */
+export const CONTENT_SECURITY_POLICY =
+  "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
+
+/**
+ * Serves the built web app (npm run web:build) when it exists. Unknown GET paths outside /api return index.html so
+ * the single-page app can handle them; /api paths keep their JSON errors.
+ */
+function serveWebApp(app: Express, directory: string): void {
+  const root = resolve(directory);
+  const index = resolve(root, "index.html");
+  if (!existsSync(index)) return;
+
+  app.use((req, res, next) => {
+    if (!req.path.startsWith("/api")) res.setHeader("Content-Security-Policy", CONTENT_SECURITY_POLICY);
+    next();
+  });
+  app.use(express.static(root, { index: false, dotfiles: "ignore", maxAge: "1h" }));
+  app.use((req, res, next) => {
+    if ((req.method !== "GET" && req.method !== "HEAD") || req.path.startsWith("/api")) return next();
+    res.setHeader("Cache-Control", "no-cache");
+    res.sendFile(index);
+  });
 }

@@ -13,6 +13,7 @@ const schema = z.object({
   BCRYPT_ROUNDS: z.coerce.number().int().min(4).max(15).default(12),
   LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().min(1).default(10),
   UPLOAD_DIR: z.string().min(1).default("./data/uploads"),
+  WEB_DIST: z.string().min(1).default("./web/dist"),
   MAX_UPLOAD_MB: z.coerce.number().int().min(1).max(500).default(20),
   USER_QUOTA_MB: z.coerce.number().int().min(1).default(200),
   ESCROW_HOLD_DAYS: z.coerce.number().int().min(0).max(90).default(7),

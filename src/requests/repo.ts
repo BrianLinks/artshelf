@@ -1,6 +1,6 @@
 import type { Db } from "../db/connection.js";
 import type { Tier } from "../artists/profiles.js";
-import { BOARD_STATUSES, type RequestStatus } from "./machine.js";
+import type { BOARD_STATUSES, RequestStatus } from "./machine.js";
 
 export interface RequestRecord {
   id: number;

@@ -53,7 +53,7 @@ describe("takedown notice states", () => {
 
   it("has three terminal states and treats the others as active", () => {
     const terminal = NOTICE_STATUSES.filter((status) => NOTICE_TRANSITIONS[status].length === 0);
-    expect([...terminal].sort()).toEqual(["closed", "rejected", "reinstated"]);
+    expect([...terminal].sort()).toEqual(["closed", "reinstated", "rejected"]);
     expect([...ACTIVE_NOTICE_STATUSES].sort()).toEqual(["counter_noticed", "received", "upheld"]);
   });
 });
