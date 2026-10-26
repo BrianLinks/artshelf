@@ -32,6 +32,7 @@ export const ROUTES = [
   { name: "request", pattern: "/requests/:id" },
   { name: "support", pattern: "/support" },
   { name: "ticket", pattern: "/support/:id" },
+  { name: "staff", pattern: "/staff" },
 ] as const;
 
 export type RouteName = (typeof ROUTES)[number]["name"];

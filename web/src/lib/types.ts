@@ -201,3 +201,28 @@ export interface TicketMessage {
 export interface TicketDetail extends TicketSummary {
   messages: TicketMessage[];
 }
+
+export interface ReviewReport {
+  id: number;
+  rating: number;
+  comment: string;
+  reviewer: { userId: number; displayName: string };
+  status: string;
+  openFlags: number;
+  flags: { reporterUserId: number; reason: string; note: string; createdAt: string; resolved: boolean }[];
+  createdAt: string;
+}
+
+export interface TakedownNotice {
+  id: number;
+  status: string;
+  listing: { id: number; title: string };
+  claimant: { userId: number; displayName: string };
+  workDescription: string;
+  originalUrl: string | null;
+  signature: string;
+  counterStatement: string | null;
+  counterSignature: string | null;
+  resolutionNote: string | null;
+  createdAt: string;
+}

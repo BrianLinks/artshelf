@@ -12,6 +12,7 @@ import { NotificationsPage } from "./pages/NotificationsPage";
 import { OrdersPage } from "./pages/OrdersPage";
 import { MyRequestsPage, RequestNewPage, RequestPage, RequestsBoardPage } from "./pages/RequestsPages";
 import { SearchPage } from "./pages/SearchPage";
+import { StaffPage } from "./pages/StaffPage";
 import { SupportPage, TicketPage } from "./pages/SupportPages";
 import { WalletPage } from "./pages/WalletPage";
 
@@ -52,6 +53,8 @@ function Page({ path, query }: { path: string; query: URLSearchParams }) {
       return <SupportPage />;
     case "ticket":
       return <TicketPage id={match.params.id ?? ""} />;
+    case "staff":
+      return <StaffPage />;
     default:
       return (
         <section>

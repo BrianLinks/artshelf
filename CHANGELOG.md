@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+## [1.1.0]
+
+### Added
+- Staff console (`#/staff`) for moderators and admins: approve or reject artist profiles, resolve disputed sales and commissions, hide, dismiss or restore reported reviews, and decide copyright notices and counter-notices.
+- `GET /api/moderation/orders` and `GET /api/moderation/requests`, which list cases by status (disputed by default).
+- A regression test that fails if any link points at a page that does not exist, or if a React effect returns a value.
+- Error boundary: a page that fails shows its error instead of a blank screen, and recovers on the next navigation.
+- `npm run app` builds the UI and starts the server in one terminal.
+
+### Fixed
+- Every link click crashed with "n is not a function": an effect returned the result of `window.scrollTo`, which newer browsers return as a Promise, and React called it as a cleanup function.
+- Button-style links in the header (Create account) had dark text on a dark button.
+- A lint error and a wrong test expectation from milestone 6.
+
 ## [1.0.0] - Milestone 9
 
 ### Added

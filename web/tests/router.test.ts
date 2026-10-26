@@ -40,6 +40,7 @@ describe("matchRoute", () => {
     expect(matchRoute("/requests/7")).toEqual({ name: "request", params: { id: "7" } });
     expect(matchRoute("/support/12")).toEqual({ name: "ticket", params: { id: "12" } });
     expect(matchRoute("/artist")).toEqual({ name: "artist", params: {} });
+    expect(matchRoute("/staff")).toEqual({ name: "staff", params: {} });
     expect(matchRoute("/requests/7/extra")).toBeNull();
   });
 

@@ -149,7 +149,7 @@ See [.env.example](.env.example). Invalid values stop the process at startup. In
 
 ## Using the web app
 
-Everything is reachable from the header: **Browse** (search by words, color or "more like this"), **Requests** (the board, with a form to post one), **Dashboard** for artists (profile, uploads, listings, earnings), **Support** and **Help**. Artists need a moderator to approve their profile before listings and bids go public: sign in as the demo moderator, or call `POST /api/moderation/artists/:userId/approve`. Moderation tools beyond the support queue are API-only; see [docs/API.md](docs/API.md).
+Everything is reachable from the header: **Browse** (search by words, color or "more like this"), **Requests** (the board, with a form to post one), **Dashboard** for artists (profile, uploads, listings, earnings), **Support** and **Help**. Artists need a moderator to approve their profile before listings and bids go public: sign in as the demo moderator (`mod@demo.artshelf.test`) and use the Staff page. Moderators and admins get a **Staff** link: approve artist profiles, settle disputes, handle review reports and decide copyright notices. Listing removal and user administration are API-only; see [docs/API.md](docs/API.md).
 
 ## Documentation
 

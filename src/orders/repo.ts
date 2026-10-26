@@ -111,6 +111,11 @@ export function listForArtist(db: Db, artistUserId: number): OrderRecord[] {
   return rows.map(toRecord);
 }
 
+export function listOrdersByStatus(db: Db, status: OrderStatus, limit: number, offset: number): OrderRecord[] {
+  const rows = db.prepare(`${SELECT} WHERE o.status = ? ORDER BY o.updated_at, o.id LIMIT ? OFFSET ?`).all(status, limit, offset) as OrderRow[];
+  return rows.map(toRecord);
+}
+
 export function findActivePurchase(db: Db, buyerUserId: number, listingId: number, license: LicenseType): boolean {
   const row = db
     .prepare("SELECT 1 AS found FROM orders WHERE buyer_user_id = ? AND listing_id = ? AND license_type = ? AND status <> 'refunded'")

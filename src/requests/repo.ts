@@ -149,6 +149,11 @@ export function listForArtist(db: Db, artistUserId: number): RequestRecord[] {
   return rows.map(toRecord);
 }
 
+export function listRequestsByStatus(db: Db, status: RequestStatus, limit: number, offset: number): RequestRecord[] {
+  const rows = db.prepare(`${SELECT} WHERE r.status = ? ORDER BY r.updated_at, r.id LIMIT ? OFFSET ?`).all(status, limit, offset) as RequestRow[];
+  return rows.map(toRecord);
+}
+
 export const BOARD_SORTS = ["newest", "budget_asc", "budget_desc"] as const;
 export type BoardSort = (typeof BOARD_SORTS)[number];
 const ORDER_BY: Record<BoardSort, string> = {

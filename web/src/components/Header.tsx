@@ -64,6 +64,7 @@ export function Header({ path, query }: { path: string; query: URLSearchParams }
           {loading ? <span className="account-placeholder" aria-hidden="true" /> : user ? (
             <>
               {wallet.data ? <a href={href("/wallet")}>{formatCents(wallet.data.balanceCents)}</a> : null}
+              {user.role === "moderator" || user.role === "admin" ? <a href={href("/staff")}>Staff</a> : null}
               <a href={href("/orders")}>Orders</a>
               <a href={href("/notifications")}>
                 Inbox{unread.data && unread.data.unreadCount > 0 ? <span className="badge count">{unread.data.unreadCount}</span> : null}
@@ -76,7 +77,7 @@ export function Header({ path, query }: { path: string; query: URLSearchParams }
           ) : (
             <>
               <a href={href("/login")}>Log in</a>
-              <a className="button" href={href("/register")}>
+              <a className="button" href={href("/register")} style={{ color: "var(--accent-fg)" }}>
                 Create account
               </a>
             </>

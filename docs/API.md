@@ -57,4 +57,4 @@ Upload with `POST /api/assets?category=<slug>&filename=<name>` and a raw `applic
 
 ## Staff endpoints
 
-Moderators and admins use `/api/moderation/...` (approve or reject artist profiles, resolve disputes, handle review reports, decide copyright notices, remove listings), `/api/support/queue`, and admins also use `/api/admin/...` (users, roles, artist tiers, ledger verification). These have no screens in the web app apart from the support queue.
+Moderators and admins use `/api/moderation/...` (approve or reject artist profiles, list disputed orders and requests, resolve disputes, handle review reports, decide copyright notices, remove listings), `/api/support/queue`, and admins also use `/api/admin/...` (users, roles, artist tiers, ledger verification). The web app's staff console (`#/staff`) covers artist approvals, disputes, review reports and copyright notices, and the support page has the ticket queue. Listing removal and user administration (roles, tiers, disabling accounts) are API-only.
