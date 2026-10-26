@@ -32,6 +32,9 @@ Please do not open a public issue. Email the maintainer (see the GitHub profile 
 - Notifications are private to their owner; other users get 404.
 - Search input is reduced to letters and digits and quoted before reaching SQLite FTS5, and every query is parameterized; FTS operators, quotes and SQL fragments cannot change the query. Query length and word count are capped.
 - Search can only return publicly visible listings; drafts, removed listings and unapproved or disabled artists never appear.
+- The web app is served with a content security policy (own scripts, styles and images only; no framing), and uses no `dangerouslySetInnerHTML`: all user text is rendered as text. It keeps no tokens in browser storage; the session cookie is `HttpOnly`.
+- API responses are `no-store`; the app shell is served uncached.
+- The demo seed creates accounts with a known password, so it refuses to run when `NODE_ENV=production`. Never seed a database that holds real users.
 - No secrets are committed. Configuration comes from the environment and is validated at startup.
 
 ## Known limitations

@@ -4,6 +4,30 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+## [1.0.0] - Milestone 9
+
+### Added
+- Artist dashboard: profile, uploads, listing creation, publish and unpublish, earnings.
+- Request Board screens: board with filters, posting a request, proposals, accepting, work, delivery, revisions, approval, disputes, withdrawal, history, and reviews of finished commissions.
+- Support screens: tickets, replies and a staff queue; a copyright notice form on listings; inbox links for requests and tickets.
+- `npm run seed`: demo accounts, procedurally generated artwork, sales, reviews and a request with proposals. It refuses to run in production and is safe to run twice.
+- Consolidated API reference in `docs/API.md`.
+
+### Changed
+- The order review form is shared with commissions.
+
+## [0.8.0] - Milestone 8
+
+### Added
+- React web app (`web/`): home, browse and search (text, color, filters, paging), listing detail with licenses and purchase, login and registration, wallet, orders (confirm, dispute, refund, download, license grant, reviews), inbox and help center.
+- Pure, tested client logic: API client, hash router, search state, formatters.
+- The API server can serve the built app, with a content security policy and a single-page fallback.
+- CI builds the web app.
+
+### Changed
+- `Cache-Control: no-store` now applies to API responses only.
+- `npm run typecheck` also checks the web project.
+
 ## [0.7.0] - Milestone 7
 
 ### Added

@@ -23,9 +23,11 @@ src/
   licenses/          license types, price multipliers and allowed-use matrix (pure functions)
   listings/          listing repository (queries, views) and service (create, edit, publish, remove)
   assets/            magic-byte detection, image processing, local storage, upload service, asset repository
+  seed/              procedural demo artwork and the demo data builder
   errors.ts          DomainError: business failures carrying a code the HTTP layer maps to a status
   http/              Express app, middleware, error handling, route modules
   scripts/           operational commands (migrate, create-admin)
+web/                 React app: src/lib (pure logic, tested), components, pages
 tests/               Vitest suites; HTTP tests use supertest against an in-memory database
 ```
 
@@ -68,6 +70,10 @@ Reviews are gated by completion: only the buyer of a completed order or the clie
 ## Search
 
 Text search uses an FTS5 table, `listing_search`, with one row per listing (title, description, tags, artist name, category) kept in step by `indexListing` inside the transaction that creates or edits a listing; the migration backfills existing listings. Visibility is decided at query time by the same public conditions as browsing, so unpublished, removed, unapproved or disabled-artist listings can never match. User input is reduced to letters and digits and each word becomes a quoted prefix term, so FTS operators cannot be injected. Ranking is BM25 with column weights. Color search reads `asset_colors`, a five-color palette computed when an image is uploaded (a 32x32 sample grouped into 4096 bins, ties broken by bin number, so it is deterministic). Palette similarity is the weighted nearest-color match in CIELAB, averaged in both directions, scored 0 to 1000 as an integer. Color ranking considers the newest 2,000 matching listings. See ADR 0009.
+
+## Web app
+
+`web/` is a separate Vite project that shares the repository, the lint rules and the test runner. Everything that can be pure is: the API client (with an injectable fetch), the hash router, the search-URL state, and the money, date and star formatters live in `web/src/lib` with no DOM access and are unit-tested under Node. React components stay thin and load data through one `useAsync` hook. Authentication is the server's session cookie, so the UI keeps no tokens. The API server can serve the built app itself, sending a content security policy with it and `index.html` for any non-API path. See ADR 0010.
 
 ## Upload pipeline
 
