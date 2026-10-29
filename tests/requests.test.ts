@@ -58,8 +58,11 @@ describe("request board", () => {
     const list = (await client.get(`/api/requests/${requestId}/proposals`)).body.proposals as { id: number; artist: { userId: number } }[];
     return list.find((proposal) => proposal.artist.userId === artistId)!.id;
   };
-  const accept = async (requestId: number, artistId: number, agent: Agent = client) =>
-    agent.post(`/api/requests/${requestId}/accept`).send({ proposalId: await proposalIdOf(requestId, artistId) });
+  const accept = async (requestId: number, artistId: number, agent: Agent = client) => {
+    // Look the proposal up first: starting a request and then awaiting another one on the same agent breaks supertest.
+    const proposalId = await proposalIdOf(requestId, artistId);
+    return agent.post(`/api/requests/${requestId}/accept`).send({ proposalId });
+  };
   const newAsset = async (agent: Agent, color: number, category = "illustration"): Promise<number> => {
     const response = await upload(agent, { category, filename: `work-${color}.png`, data: await makePng(color, 80, 80) });
     expect(response.status).toBe(201);
