@@ -345,7 +345,7 @@ describe("request board", () => {
       expect((await act(artistA, id, "start")).status).toBe(409);
       expect((await act(client, id, "approve")).status).toBe(409);
       expect((await act(client, id, "revise", { note: "x" })).status).toBe(409);
-      await deliverWork(id);
+      await deliverWork(id, 33);
       expect((await act(artistA, id, "approve")).status).toBe(404);
       expect((await act(client2, id, "approve")).status).toBe(404);
       expect((await act(client, id, "revise", {})).status).toBe(400);
