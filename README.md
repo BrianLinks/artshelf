@@ -159,4 +159,4 @@ Everything is reachable from the header: **Browse** (search by words, color or "
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT, (c) 2026 Brian Okoth. See [LICENSE](LICENSE), [NOTICE.md](NOTICE.md) and [docs/LICENSING.md](docs/LICENSING.md).

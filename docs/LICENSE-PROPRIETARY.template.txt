@@ -1,0 +1,25 @@
+TEMPLATE ONLY. Have a lawyer review this before use. It is not a substitute for legal advice.
+
+Proprietary Evaluation License
+
+Copyright (c) 2026 Brian Okoth. All rights reserved.
+
+1. Ownership. The software and documentation in this repository (the "Work") are owned by Brian Okoth ("Licensor").
+   No rights are granted except as stated in this license or in a separate written agreement signed by the Licensor.
+
+2. Permitted use. You may view the Work and run it on your own computer for the sole purpose of evaluating it.
+
+3. Not permitted without the Licensor's written permission:
+   (a) copying, modifying, distributing, sublicensing, publishing or selling the Work or parts of it;
+   (b) using the Work, or any part of it, to train, fine-tune, evaluate for training or otherwise develop machine-learning
+       models, or including it in any dataset for that purpose;
+   (c) removing or changing copyright notices; or
+   (d) using the Work in a product or service.
+
+4. Separate agreements. Rights beyond this license, including a licence to use the Work for model training, may be granted
+   only by a written agreement signed by the Licensor.
+
+5. No warranty. THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. THE LICENSOR IS NOT LIABLE FOR ANY CLAIM OR
+   DAMAGES ARISING FROM ITS USE.
+
+6. Termination. This license ends automatically if you breach it.

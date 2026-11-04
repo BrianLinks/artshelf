@@ -50,5 +50,14 @@
     "typescript-eslint": "^8.15.0",
     "vite": "^6.0.0",
     "vitest": "^3.0.0"
-  }
+  },
+  "author": "Brian Okoth",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BrianLinks/artshelf.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BrianLinks/artshelf/issues"
+  },
+  "homepage": "https://github.com/BrianLinks/artshelf#readme"
 }
